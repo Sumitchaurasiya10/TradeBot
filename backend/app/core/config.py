@@ -1,5 +1,6 @@
-﻿from decimal import Decimal
-from typing import List
+from decimal import Decimal
+from typing import List, Union
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +15,21 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = 'INFO'
     PROJECT_NAME: str = 'Indian Stock Market Paper Trading Bot'
     API_V1_STR: str = '/api/v1'
+
+    # CORS configuration
+    CORS_ORIGINS: List[str] = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+    ]
+
+    @field_validator('CORS_ORIGINS', mode='before')
+    @classmethod
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str) and not v.startswith('['):
+            return [i.strip() for i in v.split(',') if i.strip()]
+        return v
 
     # Database: SQLite fallback for local dev, PostgreSQL for production
     DATABASE_URL: str = 'sqlite+aiosqlite:///./tradebot.db'

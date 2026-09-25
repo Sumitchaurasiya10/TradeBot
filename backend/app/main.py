@@ -1,4 +1,14 @@
-﻿from contextlib import asynccontextmanager
+import os
+import sys
+
+# Ensure project root is in sys.path so 'backend.app' works when running from inside backend/
+_backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_root_dir = os.path.dirname(_backend_dir)
+for _p in (_root_dir, _backend_dir):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.api.v1.router import api_router
@@ -23,25 +33,24 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     description=(
         "Educational & Technical Interview Portfolio: Indian Equity Market Paper Trading Bot. "
-        "Strictly simulated trading with explainable technical indicators (EMA + RSI + Volume), "
-        "chronological zero-lookahead backtesting, and normalized database caching."
+        "Strictly simulated paper trading with zero live broker execution. Features explainable "
+        "rule-based EMA+RSI+Volume strategies, zero look-ahead bias backtesting, and realistic Indian "
+        "transaction cost modeling."
     ),
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
     lifespan=lifespan,
 )
 
-# CORS configuration for Next.js frontend
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "*"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Mount API v1 router
+# Include API v1 Router
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
@@ -49,8 +58,7 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 async def root():
     return {
         "project": settings.PROJECT_NAME,
-        "status": "HEALTHY",
-        "api_docs": "/docs",
-        "api_v1_prefix": settings.API_V1_STR,
-        "disclaimer": "Paper/simulated trading only. Not financial advice.",
+        "status": "online",
+        "mode": "PAPER_TRADING_ONLY",
+        "docs": "/docs",
     }
