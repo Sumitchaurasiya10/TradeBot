@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 from typing import Optional
 import pandas as pd
 import yfinance as yf
@@ -46,19 +46,24 @@ class YFinanceProvider(DataProvider):
                 logger.warning(f"No data returned by yfinance for symbol '{clean_symbol}'")
                 return pd.DataFrame()
 
-            # Flatten multi-index columns if present
-            if isinstance(raw_df.columns, pd.MultiIndex):
-                raw_df.columns = [c[0].lower() for c in raw_df.columns]
-            else:
-                raw_df.columns = [str(c).lower() for c in raw_df.columns]
-
             # Reset index to bring Date/Datetime into a column
             raw_df = raw_df.reset_index()
 
+            # Flatten multi-index columns if present and normalize to lowercase
+            if isinstance(raw_df.columns, pd.MultiIndex):
+                raw_df.columns = [str(c[0]).strip().lower() for c in raw_df.columns]
+            else:
+                raw_df.columns = [str(c).strip().lower() for c in raw_df.columns]
+
             # Standardize timestamp column name
-            date_col = "date" if "date" in raw_df.columns else "datetime"
-            if date_col not in raw_df.columns:
-                raise ValueError(f"Expected Date/Datetime column missing in yfinance response: {raw_df.columns}")
+            date_col = None
+            for candidate in ["date", "datetime", "timestamp", "index"]:
+                if candidate in raw_df.columns:
+                    date_col = candidate
+                    break
+
+            if not date_col:
+                raise ValueError(f"Expected Date/Datetime column missing in yfinance response: {raw_df.columns.tolist()}")
 
             raw_df = raw_df.rename(columns={date_col: "timestamp"})
 
