@@ -12,6 +12,8 @@ A portfolio-quality, production-grade **Indian Stock Market Real-Time Monitoring
 > **CRITICAL DISCLAIMER**: This application is strictly an educational simulation and paper-trading system. It does **NOT** place real trades, deploy real money, or execute orders on live brokerages. Live brokerage order execution is intentionally omitted.
 
 ---
+## Live Link
+https://trade-bot-five-henna.vercel.app/
 
 ## 🏛️ System Architecture
 
