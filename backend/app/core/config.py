@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = 'Indian Stock Market Paper Trading Bot'
     API_V1_STR: str = '/api/v1'
 
+    # Authentication & Security
+    SECRET_KEY: str = 'quantdesk-india-super-secret-jwt-key-2026'
+    ALGORITHM: str = 'HS256'
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+
     # CORS configuration
     CORS_ORIGINS: List[str] = [
         'http://localhost:3000',

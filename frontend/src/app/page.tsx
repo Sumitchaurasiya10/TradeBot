@@ -10,9 +10,10 @@ import { StrategyView } from "../components/StrategyView";
 import { PaperTradingView } from "../components/PaperTradingView";
 import { TradesView } from "../components/TradesView";
 import { OrderModal } from "../components/OrderModal";
+import { AuthModal } from "../components/AuthModal";
 import { api } from "../services/api";
 import { useMarketWebSocket } from "../hooks/useMarketWebSocket";
-import { BotStatus, PortfolioSummary, Stock } from "../types";
+import { BotStatus, PortfolioSummary, Stock, User } from "../types";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
 export default function Home() {
@@ -22,6 +23,26 @@ export default function Home() {
   const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // User Authentication State
+  const [user, setUser] = useState<User | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [authModalMode, setAuthModalMode] = useState<"login" | "register">("login");
+
+  const handleOpenAuth = (mode: "login" | "register" = "login") => {
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+  };
+
+  const handleLogout = () => {
+    api.logout();
+    setUser(null);
+  };
+
+  const handleAuthSuccess = (authenticatedUser: User) => {
+    setUser(authenticatedUser);
+    refreshPortfolio();
+  };
 
   // Brokerage-style order ticket modal state
   const [tradeModalOpen, setTradeModalOpen] = useState<boolean>(false);
@@ -38,11 +59,12 @@ export default function Home() {
   const defaultWatchlist = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "ITC", "LT"];
   const { connectionState, marketStatus, indices, quotes, lastUpdated } = useMarketWebSocket(defaultWatchlist);
 
+
   const loadInitialData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [statusData, stocksData, portfolioData] = await Promise.all([
+      const [statusData, stocksData, portfolioData, userData] = await Promise.all([
         api.getBotStatus().catch((e) => {
           console.error("Status fetch failed:", e);
           return null;
@@ -55,11 +77,17 @@ export default function Home() {
           console.error("Portfolio fetch failed:", e);
           return null;
         }),
+        api.getMe().catch(() => {
+          return null;
+        }),
       ]);
 
       setBotStatus(statusData);
       setStocks(stocksData || []);
       setPortfolio(portfolioData);
+      if (userData) {
+        setUser(userData);
+      }
     } catch (err: any) {
       console.error("Failed to load application data:", err);
       setError(err.message || "Failed to connect to TradeBot backend API.");
@@ -91,6 +119,9 @@ export default function Home() {
         lastUpdated={lastUpdated}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        user={user}
+        onOpenAuth={handleOpenAuth}
+        onLogout={handleLogout}
       />
 
       {/* Main Container */}
@@ -165,6 +196,15 @@ export default function Home() {
           refreshPortfolio();
         }}
       />
+
+      {/* User Login & Registration Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+        initialMode={authModalMode}
+      />
+
 
       {/* Footer / Educational Disclaimer Banner */}
       <footer className="border-t border-slate-900 bg-slate-950 py-6 mt-12 text-xs text-slate-500">

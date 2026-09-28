@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { Activity, Clock, Layers, Radio, ShieldAlert, TrendingUp } from "lucide-react";
-import { BotStatus, MarketSessionStatus } from "../types";
+import { Activity, Clock, Layers, LogIn, LogOut, Radio, ShieldAlert, TrendingUp, User as UserIcon, UserPlus } from "lucide-react";
+import { BotStatus, MarketSessionStatus, User } from "../types";
 
 interface HeaderProps {
   status: BotStatus | null;
@@ -11,6 +11,9 @@ interface HeaderProps {
   lastUpdated?: string;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  user: User | null;
+  onOpenAuth: (mode?: "login" | "register") => void;
+  onLogout: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,6 +23,9 @@ export const Header: React.FC<HeaderProps> = ({
   lastUpdated,
   activeTab,
   setActiveTab,
+  user,
+  onOpenAuth,
+  onLogout,
 }) => {
   const tabs = [
     { id: "dashboard", label: "Dashboard" },
@@ -54,10 +60,10 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Status Indicators */}
-          <div className="hidden md:flex items-center space-x-3 text-xs">
+          {/* Status Indicators & Auth Controls */}
+          <div className="flex items-center space-x-3 text-xs">
             {/* Live Connection Badge */}
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300">
+            <div className="hidden lg:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300">
               <span
                 className={`h-2 w-2 rounded-full ${
                   connectionState === "LIVE"
@@ -74,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             {/* Market Session Status */}
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300">
+            <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300">
               <Clock className="h-3.5 w-3.5 text-blue-400" />
               <span>NSE:</span>
               <span className={`font-semibold ${isSessionOpen ? "text-emerald-400" : "text-amber-400"}`}>
@@ -83,10 +89,51 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             {/* Zero Real Money Badge */}
-            <div className="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400">
+            <div className="hidden md:flex items-center space-x-1 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400">
               <ShieldAlert className="h-3.5 w-3.5" />
               <span>No Real Money</span>
             </div>
+
+            {/* User Profile / Auth Actions */}
+            {user ? (
+              <div className="flex items-center space-x-2 pl-2 border-l border-slate-800">
+                <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-xs">
+                  <div className="h-5 w-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-[10px]">
+                    {user.full_name ? user.full_name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-slate-200 leading-tight">
+                      {user.full_name || user.email.split("@")[0]}
+                    </span>
+                    <span className="text-[9px] text-slate-500 uppercase leading-none">{user.role}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={onLogout}
+                  title="Sign Out"
+                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-900 rounded-lg transition"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2 pl-2 border-l border-slate-800">
+                <button
+                  onClick={() => onOpenAuth("login")}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition flex items-center space-x-1.5"
+                >
+                  <LogIn className="h-3.5 w-3.5" />
+                  <span>Log In</span>
+                </button>
+                <button
+                  onClick={() => onOpenAuth("register")}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition flex items-center space-x-1.5 shadow-sm"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  <span>Register</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

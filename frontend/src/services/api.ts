@@ -1,10 +1,12 @@
 import {
+  AuthResponse,
   BacktestRequest,
   BacktestResponse,
   BotStatus,
   FNOQuote,
   IndexQuote,
   IndicatorResponse,
+  LoginRequest,
   MarketDataResponse,
   MarketSessionStatus,
   OptionChainResponse,
@@ -13,13 +15,37 @@ import {
   PortfolioSummary,
   Position,
   Quote,
+  RegisterRequest,
   SignalRequest,
   SignalResponse,
   Stock,
   Trade,
+  User,
 } from "../types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+
+const TOKEN_KEY = "tradebot_auth_token";
+
+export const authStorage = {
+  getToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(TOKEN_KEY);
+  },
+  setToken(token: string): void {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(TOKEN_KEY, token);
+  },
+  removeToken(): void {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(TOKEN_KEY);
+  },
+};
+
+export function getAuthHeaders(): HeadersInit {
+  const token = authStorage.getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -36,7 +62,47 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export const api = {
+  // Authentication Endpoints
+  async register(request: RegisterRequest): Promise<AuthResponse> {
+    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
+    const data = await handleResponse<AuthResponse>(res);
+    if (data.access_token) {
+      authStorage.setToken(data.access_token);
+    }
+    return data;
+  },
+
+  async login(request: LoginRequest): Promise<AuthResponse> {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
+    const data = await handleResponse<AuthResponse>(res);
+    if (data.access_token) {
+      authStorage.setToken(data.access_token);
+    }
+    return data;
+  },
+
+  async getMe(): Promise<User> {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      cache: "no-store",
+      headers: { ...getAuthHeaders() },
+    });
+    return handleResponse<User>(res);
+  },
+
+  logout(): void {
+    authStorage.removeToken();
+  },
+
   async getBotStatus(): Promise<BotStatus> {
+
     const res = await fetch(`${API_BASE_URL}/bot/status`, { cache: "no-store" });
     return handleResponse<BotStatus>(res);
   },
