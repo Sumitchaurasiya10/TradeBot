@@ -11,10 +11,11 @@ import { PaperTradingView } from "../components/PaperTradingView";
 import { TradesView } from "../components/TradesView";
 import { OrderModal } from "../components/OrderModal";
 import { AuthModal } from "../components/AuthModal";
+import { AuthGate } from "../components/AuthGate";
 import { api } from "../services/api";
 import { useMarketWebSocket } from "../hooks/useMarketWebSocket";
 import { BotStatus, PortfolioSummary, Stock, User } from "../types";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw, TrendingUp } from "lucide-react";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
@@ -22,6 +23,7 @@ export default function Home() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [authChecking, setAuthChecking] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // User Authentication State
@@ -93,6 +95,7 @@ export default function Home() {
       setError(err.message || "Failed to connect to TradeBot backend API.");
     } finally {
       setLoading(false);
+      setAuthChecking(false);
     }
   };
 
@@ -108,6 +111,29 @@ export default function Home() {
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  // 1. Initial Auth & Session Verification Screen
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 animate-pulse">
+            <TrendingUp className="h-8 w-8" />
+          </div>
+          <div className="text-center">
+            <h2 className="text-white font-bold text-lg">TradeBot India</h2>
+            <p className="text-xs text-slate-400 mt-1">Verifying secure terminal session...</p>
+          </div>
+          <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Authentication Gate: Must Login / Register first before entering the project
+  if (!user) {
+    return <AuthGate onAuthSuccess={handleAuthSuccess} />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
