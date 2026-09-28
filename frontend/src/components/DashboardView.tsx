@@ -1,16 +1,37 @@
 "use client";
 
 import React from "react";
-import { ArrowDownRight, ArrowUpRight, DollarSign, Layers, PieChart, ShieldCheck, Wallet } from "lucide-react";
-import { BotStatus, PortfolioSummary } from "../types";
+import {
+  Activity,
+  ArrowDownRight,
+  ArrowUpRight,
+  ChevronRight,
+  DollarSign,
+  Layers,
+  PieChart,
+  ShieldCheck,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
+import { BotStatus, IndexQuote, PortfolioSummary, Quote } from "../types";
 
 interface DashboardViewProps {
   portfolio: PortfolioSummary | null;
   botStatus: BotStatus | null;
+  indices?: IndexQuote[];
+  quotes?: Record<string, Quote>;
   setActiveTab: (tab: string) => void;
+  onSelectStock?: (symbol: string) => void;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ portfolio, botStatus, setActiveTab }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({
+  portfolio,
+  botStatus,
+  indices = [],
+  quotes = {},
+  setActiveTab,
+  onSelectStock,
+}) => {
   const initialBalance = portfolio?.initial_balance || 100000;
   const cash = portfolio?.cash || 100000;
   const totalEquity = portfolio?.total_equity || 100000;
@@ -23,9 +44,59 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ portfolio, botStat
   const pnlPercent = initialBalance > 0 ? ((totalPnl / initialBalance) * 100).toFixed(2) : "0.00";
   const isProfitable = totalPnl >= 0;
 
+  const coreWatchlist = [
+    { symbol: "RELIANCE", name: "Reliance Industries", sector: "Energy & Retail" },
+    { symbol: "TCS", name: "Tata Consultancy Services", sector: "IT Services" },
+    { symbol: "INFY", name: "Infosys Limited", sector: "IT Services" },
+    { symbol: "HDFCBANK", name: "HDFC Bank Limited", sector: "Banking" },
+    { symbol: "ICICIBANK", name: "ICICI Bank Limited", sector: "Banking" },
+    { symbol: "SBIN", name: "State Bank of India", sector: "Banking (PSU)" },
+    { symbol: "ITC", name: "ITC Limited", sector: "FMCG" },
+    { symbol: "LT", name: "Larsen & Toubro", sector: "Infrastructure" },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Portfolio Overview Banner */}
+      {/* 1. Benchmark Indices Live Strip */}
+      {indices.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {indices.map((idx) => {
+            const isUp = (idx.change || 0) >= 0;
+            return (
+              <div
+                key={idx.symbol}
+                onClick={() => setActiveTab("indices")}
+                className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 p-4 rounded-xl cursor-pointer transition shadow-md"
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-400">{idx.exchange} INDEX</span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                      idx.data_status === "LIVE"
+                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                        : "bg-purple-500/10 text-purple-300 border border-purple-500/30"
+                    }`}
+                  >
+                    {idx.data_status}
+                  </span>
+                </div>
+                <div className="mt-2 flex items-baseline justify-between">
+                  <span className="text-base font-bold text-white tracking-tight">{idx.symbol}</span>
+                  <span className="text-lg font-black font-mono text-white">
+                    {idx.last_price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className={`mt-1 flex items-center justify-end text-xs font-semibold ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+                  {isUp ? <ArrowUpRight className="h-3.5 w-3.5 mr-0.5" /> : <ArrowDownRight className="h-3.5 w-3.5 mr-0.5" />}
+                  <span>{isUp ? "+" : ""}{idx.change?.toFixed(2)} ({isUp ? "+" : ""}{idx.change_percent?.toFixed(2)}%)</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 2. Portfolio Overview Banner */}
       <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-6 backdrop-blur">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -42,128 +113,213 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ portfolio, botStat
               Place Simulated Order
             </button>
             <button
-              onClick={() => setActiveTab("backtest")}
+              onClick={() => setActiveTab("fno")}
               className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm rounded-lg border border-slate-700 transition"
             >
-              Run Backtest
+              F&O Option Chain
             </button>
           </div>
         </div>
 
-        {/* Primary Metric Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-          {/* Total Equity */}
-          <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-4">
-            <div className="flex items-center justify-between text-slate-400 mb-2 text-xs">
-              <span>TOTAL PORTFOLIO EQUITY</span>
-              <Wallet className="h-4 w-4 text-emerald-400" />
+        {/* Portfolio Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          <div className="bg-slate-950/60 p-4 rounded-lg border border-slate-800">
+            <div className="flex items-center justify-between text-slate-400 text-xs">
+              <span>Total Equity</span>
+              <PieChart className="h-4 w-4 text-emerald-400" />
             </div>
-            <div className="text-2xl font-bold text-white">₹{totalEquity.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</div>
-            <div className="text-xs text-slate-400 mt-1">Cash + Market Value of Holdings</div>
+            <div className="mt-2 text-xl font-bold font-mono text-white">
+              ₹{totalEquity.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">Includes cash & open market value</div>
           </div>
 
-          {/* Available Cash */}
-          <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-4">
-            <div className="flex items-center justify-between text-slate-400 mb-2 text-xs">
-              <span>AVAILABLE SIMULATED CASH</span>
-              <DollarSign className="h-4 w-4 text-blue-400" />
+          <div className="bg-slate-950/60 p-4 rounded-lg border border-slate-800">
+            <div className="flex items-center justify-between text-slate-400 text-xs">
+              <span>Available Cash</span>
+              <Wallet className="h-4 w-4 text-blue-400" />
             </div>
-            <div className="text-2xl font-bold text-white">₹{cash.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</div>
-            <div className="text-xs text-slate-400 mt-1">Starting Capital: ₹{initialBalance.toLocaleString("en-IN")}</div>
+            <div className="mt-2 text-xl font-bold font-mono text-white">
+              ₹{cash.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">Unallocated buying power</div>
           </div>
 
-          {/* Total P&L */}
-          <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-4">
-            <div className="flex items-center justify-between text-slate-400 mb-2 text-xs">
-              <span>TOTAL SIMULATED P&L</span>
-              {isProfitable ? <ArrowUpRight className="h-4 w-4 text-emerald-400" /> : <ArrowDownRight className="h-4 w-4 text-rose-400" />}
+          <div className="bg-slate-950/60 p-4 rounded-lg border border-slate-800">
+            <div className="flex items-center justify-between text-slate-400 text-xs">
+              <span>Total Simulated P&L</span>
+              <span className={`flex items-center ${isProfitable ? "text-emerald-400" : "text-rose-400"}`}>
+                {isProfitable ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+                {pnlPercent}%
+              </span>
             </div>
-            <div className={`text-2xl font-bold ${isProfitable ? "text-emerald-400" : "text-rose-400"}`}>
-              {isProfitable ? "+" : ""}₹{totalPnl.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            <div className={`mt-2 text-xl font-bold font-mono ${isProfitable ? "text-emerald-400" : "text-rose-400"}`}>
+              {isProfitable ? "+" : ""}₹{totalPnl.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div className={`text-xs mt-1 font-medium ${isProfitable ? "text-emerald-400/80" : "text-rose-400/80"}`}>
-              {isProfitable ? "+" : ""}{pnlPercent}% overall return
+            <div className="mt-1 text-xs text-slate-500">
+              Realized: ₹{realizedPnl.toFixed(2)} | Unrealized: ₹{unrealizedPnl.toFixed(2)}
             </div>
           </div>
 
-          {/* Unrealized vs Realized */}
-          <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-4">
-            <div className="flex items-center justify-between text-slate-400 mb-2 text-xs">
-              <span>REALIZED / UNREALIZED P&L</span>
-              <PieChart className="h-4 w-4 text-purple-400" />
+          <div className="bg-slate-950/60 p-4 rounded-lg border border-slate-800">
+            <div className="flex items-center justify-between text-slate-400 text-xs">
+              <span>Taxes & Slippage Paid</span>
+              <ShieldCheck className="h-4 w-4 text-amber-400" />
             </div>
-            <div className="text-sm font-semibold text-slate-200">
-              Realized: <span className={realizedPnl >= 0 ? "text-emerald-400" : "text-rose-400"}>₹{realizedPnl.toFixed(2)}</span>
+            <div className="mt-2 text-xl font-bold font-mono text-amber-400">
+              ₹{totalFees.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div className="text-sm font-semibold text-slate-200 mt-1">
-              Unrealized: <span className={unrealizedPnl >= 0 ? "text-emerald-400" : "text-rose-400"}>₹{unrealizedPnl.toFixed(2)}</span>
-            </div>
-            <div className="text-[11px] text-slate-500 mt-1">Fees Paid: ₹{totalFees.toFixed(2)}</div>
+            <div className="mt-1 text-xs text-slate-500">STT, GST, SEBI & exchange costs</div>
           </div>
         </div>
       </div>
 
-      {/* Current Active Holdings */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-6 backdrop-blur">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center space-x-2">
-            <Layers className="h-5 w-5 text-emerald-400" />
-            <h3 className="font-bold text-white text-base">Active Open Positions ({openPositions.length})</h3>
+      {/* 3. Live Watchlist Section */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg">
+        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-emerald-400" />
+              <span>Indian Equities Watchlist</span>
+            </h3>
+            <p className="text-xs text-slate-400">Live & near-real-time quotes across core NSE large-cap equities</p>
           </div>
           <button
-            onClick={() => setActiveTab("paper")}
-            className="text-xs text-emerald-400 hover:text-emerald-300 font-medium"
+            onClick={() => setActiveTab("market")}
+            className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold"
           >
-            Manage in Paper Trading &rarr;
+            <span>Open Advanced Chart</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-800/60 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th className="py-3 px-4">Symbol</th>
+                <th className="py-3 px-4">Company</th>
+                <th className="py-3 px-4 text-right">LTP (₹)</th>
+                <th className="py-3 px-4 text-right">Change</th>
+                <th className="py-3 px-4 text-right">Day Range (₹)</th>
+                <th className="py-3 px-4 text-right">Volume</th>
+                <th className="py-3 px-4 text-center">Feed Status</th>
+                <th className="py-3 px-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
+              {coreWatchlist.map((stock) => {
+                const quote = quotes[stock.symbol];
+                const price = quote?.last_price || 0;
+                const change = quote?.change || 0;
+                const pct = quote?.change_percent || 0;
+                const isUp = change >= 0;
+                const statusTag = quote?.data_status || "DELAYED";
+
+                return (
+                  <tr key={stock.symbol} className="hover:bg-slate-800/40 transition-colors">
+                    <td className="py-3 px-4 font-bold text-white">{stock.symbol}</td>
+                    <td className="py-3 px-4 font-sans text-slate-300">
+                      <div>{stock.name}</div>
+                      <div className="text-[10px] text-slate-500">{stock.sector}</div>
+                    </td>
+                    <td className="py-3 px-4 text-right font-bold text-white">
+                      {price > 0 ? `₹${price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "—"}
+                    </td>
+                    <td className={`py-3 px-4 text-right font-semibold ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+                      {price > 0 ? `${isUp ? "+" : ""}${change.toFixed(2)} (${isUp ? "+" : ""}${pct.toFixed(2)}%)` : "—"}
+                    </td>
+                    <td className="py-3 px-4 text-right text-slate-400">
+                      {quote?.high && quote?.low ? `₹${quote.low.toFixed(1)} - ₹${quote.high.toFixed(1)}` : "—"}
+                    </td>
+                    <td className="py-3 px-4 text-right text-slate-400">
+                      {quote?.volume ? quote.volume.toLocaleString("en-IN") : "—"}
+                    </td>
+                    <td className="py-3 px-4 text-center font-sans">
+                      <span
+                        className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
+                          statusTag === "LIVE"
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            : statusTag === "DEMO DATA"
+                            ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                            : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                        }`}
+                      >
+                        {statusTag}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center font-sans">
+                      <div className="flex items-center justify-center space-x-1.5">
+                        <button
+                          onClick={() => {
+                            if (onSelectStock) onSelectStock(stock.symbol);
+                            setActiveTab("market");
+                          }}
+                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px] transition"
+                        >
+                          Chart
+                        </button>
+                        <button
+                          onClick={() => setActiveTab("paper")}
+                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] transition"
+                        >
+                          Trade
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 4. Active Open Positions */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg">
+        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <Layers className="h-5 w-5 text-blue-400" />
+            <span>Open Paper Positions ({openPositions.length})</span>
+          </h3>
+          <button
+            onClick={() => setActiveTab("paper")}
+            className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold"
+          >
+            <span>Manage Orders</span>
+            <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </div>
 
         {openPositions.length === 0 ? (
-          <div className="text-center py-8 border border-dashed border-slate-800 rounded-lg text-slate-500 text-sm">
-            No active open positions. Go to the{" "}
-            <button onClick={() => setActiveTab("market")} className="text-emerald-400 underline">
-              Market Viewer
-            </button>{" "}
-            or{" "}
-            <button onClick={() => setActiveTab("paper")} className="text-emerald-400 underline">
-              Paper Trading
-            </button>{" "}
-            tab to simulate opening a position.
+          <div className="p-8 text-center text-slate-500 text-sm">
+            No active positions in simulated account. Place a simulated BUY order via the Paper Trading tab!
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-slate-950/80 text-xs uppercase text-slate-400 border-b border-slate-800">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-800/60 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
                 <tr>
                   <th className="py-3 px-4">Symbol</th>
-                  <th className="py-3 px-4">Quantity</th>
-                  <th className="py-3 px-4">Avg Entry Price</th>
-                  <th className="py-3 px-4">Current Price</th>
-                  <th className="py-3 px-4">Market Value</th>
-                  <th className="py-3 px-4">Unrealized P&L</th>
-                  <th className="py-3 px-4">Stop-Loss</th>
-                  <th className="py-3 px-4">Take-Profit</th>
+                  <th className="py-3 px-4 text-right">Quantity</th>
+                  <th className="py-3 px-4 text-right">Avg Entry (₹)</th>
+                  <th className="py-3 px-4 text-right">Current Price (₹)</th>
+                  <th className="py-3 px-4 text-right">Market Value (₹)</th>
+                  <th className="py-3 px-4 text-right">Unrealized P&L (₹)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
                 {openPositions.map((pos) => {
-                  const pnl = pos.unrealized_pnl;
-                  const isPosProfitable = pnl >= 0;
+                  const isProfitable = pos.unrealized_pnl >= 0;
                   return (
                     <tr key={pos.symbol} className="hover:bg-slate-800/30">
-                      <td className="py-3 px-4 font-semibold text-white">{pos.symbol}</td>
-                      <td className="py-3 px-4">{pos.quantity}</td>
-                      <td className="py-3 px-4">₹{pos.average_entry_price.toFixed(2)}</td>
-                      <td className="py-3 px-4 font-medium text-slate-100">₹{pos.current_price.toFixed(2)}</td>
-                      <td className="py-3 px-4">₹{pos.market_value.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
-                      <td className={`py-3 px-4 font-bold ${isPosProfitable ? "text-emerald-400" : "text-rose-400"}`}>
-                        {isPosProfitable ? "+" : ""}₹{pnl.toFixed(2)}
-                      </td>
-                      <td className="py-3 px-4 text-slate-400 text-xs">
-                        {pos.stop_loss_price ? `₹${pos.stop_loss_price.toFixed(2)}` : "None"}
-                      </td>
-                      <td className="py-3 px-4 text-slate-400 text-xs">
-                        {pos.take_profit_price ? `₹${pos.take_profit_price.toFixed(2)}` : "None"}
+                      <td className="py-3 px-4 font-bold text-white">{pos.symbol}</td>
+                      <td className="py-3 px-4 text-right text-slate-200">{pos.quantity}</td>
+                      <td className="py-3 px-4 text-right text-slate-300">₹{pos.average_entry_price.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right text-slate-200">₹{pos.current_price.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right text-slate-200">₹{pos.market_value.toLocaleString("en-IN")}</td>
+                      <td className={`py-3 px-4 text-right font-bold ${isProfitable ? "text-emerald-400" : "text-rose-400"}`}>
+                        {isProfitable ? "+" : ""}₹{pos.unrealized_pnl.toFixed(2)}
                       </td>
                     </tr>
                   );
@@ -172,17 +328,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ portfolio, botStat
             </table>
           </div>
         )}
-      </div>
-
-      {/* Safety & Interview Architecture Box */}
-      <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 text-xs text-slate-400 flex items-start space-x-3">
-        <ShieldCheck className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
-        <div>
-          <span className="font-semibold text-slate-300">Technical Review Guarantee:</span> This application runs entirely in
-          safe paper trading mode. No real money can be lost, and real broker order endpoints are excluded by design. Market data
-          is cached idempotently into PostgreSQL/SQLite, and the backtester simulates fills on Candle $t+1$ Open to mathematically
-          guarantee zero look-ahead bias.
-        </div>
       </div>
     </div>
   );

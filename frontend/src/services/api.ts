@@ -2,12 +2,17 @@ import {
   BacktestRequest,
   BacktestResponse,
   BotStatus,
+  FNOQuote,
+  IndexQuote,
   IndicatorResponse,
   MarketDataResponse,
+  MarketSessionStatus,
+  OptionChainResponse,
   OrderRequest,
   OrderResponse,
   PortfolioSummary,
   Position,
+  Quote,
   SignalRequest,
   SignalResponse,
   Stock,
@@ -34,6 +39,55 @@ export const api = {
   async getBotStatus(): Promise<BotStatus> {
     const res = await fetch(`${API_BASE_URL}/bot/status`, { cache: "no-store" });
     return handleResponse<BotStatus>(res);
+  },
+
+  async getMarketStatus(): Promise<MarketSessionStatus> {
+    const res = await fetch(`${API_BASE_URL}/market/status`, { cache: "no-store" });
+    return handleResponse<MarketSessionStatus>(res);
+  },
+
+  async getIndices(forceRefresh = false): Promise<IndexQuote[]> {
+    const res = await fetch(`${API_BASE_URL}/market/indices?force_refresh=${forceRefresh}`, { cache: "no-store" });
+    return handleResponse<IndexQuote[]>(res);
+  },
+
+  async getQuotes(symbols?: string, forceRefresh = false): Promise<Quote[]> {
+    const query = symbols ? `?symbols=${encodeURIComponent(symbols)}&force_refresh=${forceRefresh}` : `?force_refresh=${forceRefresh}`;
+    const res = await fetch(`${API_BASE_URL}/market/quotes${query}`, { cache: "no-store" });
+    return handleResponse<Quote[]>(res);
+  },
+
+  async getQuote(symbol: string, forceRefresh = false): Promise<Quote> {
+    const res = await fetch(`${API_BASE_URL}/market/quotes/${encodeURIComponent(symbol)}?force_refresh=${forceRefresh}`, { cache: "no-store" });
+    return handleResponse<Quote>(res);
+  },
+
+  async getChartHistory(symbol: string, timeframe = "1M"): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/market/history/${encodeURIComponent(symbol)}?timeframe=${encodeURIComponent(timeframe)}`, { cache: "no-store" });
+    return handleResponse<any>(res);
+  },
+
+  async getLiveSignal(symbol: string, params?: Record<string, any>): Promise<SignalResponse> {
+    const queryParams = new URLSearchParams(params as any).toString();
+    const queryStr = queryParams ? `?${queryParams}` : "";
+    const res = await fetch(`${API_BASE_URL}/strategy/live-signal/${encodeURIComponent(symbol)}${queryStr}`, { cache: "no-store" });
+    return handleResponse<SignalResponse>(res);
+  },
+
+  async getFnoUnderlyings(): Promise<Array<{ underlying: string; type: string; spot_price: number; data_status: string }>> {
+    const res = await fetch(`${API_BASE_URL}/fno/underlyings`, { cache: "no-store" });
+    return handleResponse<any>(res);
+  },
+
+  async getFnoExpiries(underlying: string): Promise<string[]> {
+    const res = await fetch(`${API_BASE_URL}/fno/expiries/${encodeURIComponent(underlying)}`, { cache: "no-store" });
+    return handleResponse<string[]>(res);
+  },
+
+  async getOptionChain(underlying: string, expiry?: string, forceRefresh = false): Promise<OptionChainResponse> {
+    const query = expiry ? `?expiry=${encodeURIComponent(expiry)}&force_refresh=${forceRefresh}` : `?force_refresh=${forceRefresh}`;
+    const res = await fetch(`${API_BASE_URL}/fno/option-chain/${encodeURIComponent(underlying)}${query}`, { cache: "no-store" });
+    return handleResponse<OptionChainResponse>(res);
   },
 
   async getStocks(): Promise<Stock[]> {

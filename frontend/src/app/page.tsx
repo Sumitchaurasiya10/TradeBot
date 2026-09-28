@@ -3,12 +3,15 @@
 import React, { useEffect, useState } from "react";
 import { Header } from "../components/Header";
 import { DashboardView } from "../components/DashboardView";
+import { IndicesView } from "../components/IndicesView";
+import { FNOView } from "../components/FNOView";
 import { MarketView } from "../components/MarketView";
 import { StrategyView } from "../components/StrategyView";
 import { BacktestView } from "../components/BacktestView";
 import { PaperTradingView } from "../components/PaperTradingView";
 import { TradesView } from "../components/TradesView";
 import { api } from "../services/api";
+import { useMarketWebSocket } from "../hooks/useMarketWebSocket";
 import { BotStatus, PortfolioSummary, Stock } from "../types";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
@@ -19,6 +22,10 @@ export default function Home() {
   const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Core 8 symbols for real-time WebSocket subscriptions
+  const defaultWatchlist = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "ITC", "LT"];
+  const { connectionState, marketStatus, indices, quotes, lastUpdated } = useMarketWebSocket(defaultWatchlist);
 
   const loadInitialData = async () => {
     try {
@@ -65,9 +72,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {/* Navigation Header */}
+      {/* Navigation Header with Live Stream & Market Hours Status */}
       <Header
         status={botStatus}
+        marketSession={marketStatus}
+        connectionState={connectionState}
+        lastUpdated={lastUpdated}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
@@ -102,9 +112,17 @@ export default function Home() {
           <DashboardView
             portfolio={portfolio}
             botStatus={botStatus}
+            indices={indices}
+            quotes={quotes}
             setActiveTab={setActiveTab}
           />
         )}
+
+        {activeTab === "indices" && (
+          <IndicesView indices={indices} onRefresh={loadInitialData} />
+        )}
+
+        {activeTab === "fno" && <FNOView />}
 
         {activeTab === "market" && <MarketView stocks={stocks} />}
 
@@ -133,7 +151,7 @@ export default function Home() {
             This platform strictly simulates trading on Indian NSE equities with realistic regulatory cost modeling (STT, Exchange Turnover, SEBI, GST, Stamp Duty & Slippage). No live brokerage accounts are integrated, no real money is deployed, and no guarantees of market returns are implied. Built for software engineering and quantitative architecture review.
           </p>
           <p className="text-[11px] text-slate-600">
-            TradeBot India &bull; FastAPI Backend &bull; SQLAlchemy ORM &bull; Next.js 14 App Router &bull; Tailwind CSS
+            TradeBot India &bull; FastAPI Backend &bull; WebSockets &bull; Next.js 14 App Router &bull; Tailwind CSS
           </p>
         </div>
       </footer>

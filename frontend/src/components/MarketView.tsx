@@ -12,33 +12,102 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Activity, BarChart2, RefreshCw, TrendingUp } from "lucide-react";
+import {
+  Activity,
+  ArrowDownRight,
+  ArrowUpRight,
+  BarChart2,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Layers,
+  RefreshCw,
+  TrendingDown,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
 import { api } from "../services/api";
-import { IndicatorDataPoint, IndicatorResponse, Stock } from "../types";
+import { IndicatorResponse, Quote, SignalResponse, Stock } from "../types";
 
 interface MarketViewProps {
   stocks: Stock[];
 }
 
 export const MarketView: React.FC<MarketViewProps> = ({ stocks }) => {
-  const [selectedSymbol, setSelectedSymbol] = useState<string>("TCS.NS");
+  const [selectedSymbol, setSelectedSymbol] = useState<string>("RELIANCE");
+  const [timeframe, setTimeframe] = useState<string>("1M");
   const [indicatorData, setIndicatorData] = useState<IndicatorResponse | null>(null);
+  const [liveQuote, setLiveQuote] = useState<Quote | null>(null);
+  const [liveSignal, setLiveSignal] = useState<SignalResponse | null>(null);
+  const [chartBars, setChartBars] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadData = async (symbol: string, force = false) => {
+  const timeframes = ["1D", "5D", "1M", "3M", "6M", "1Y"];
+
+  const loadData = async (symbol: string, tf = timeframe, force = false) => {
     try {
       if (force) setRefreshing(true);
       else setLoading(true);
       setError(null);
 
-      if (force) {
-        // Force refresh from provider
-        await api.getMarketData(symbol, true);
+      const clean = symbol.replace(".NS", "");
+
+      // Parallel fetch: Quote, Indicators, Live Signal, and Multi-Timeframe Chart History
+      const [quoteRes, indRes, signalRes, historyRes] = await Promise.allSettled([
+        api.getQuote(clean, force),
+        api.getIndicators(symbol, 9, 21, 14, 20),
+        api.getLiveSignal(clean),
+        api.getChartHistory(clean, tf),
+      ]);
+
+      if (quoteRes.status === "fulfilled") {
+        setLiveQuote(quoteRes.value);
       }
-      const ind = await api.getIndicators(symbol, 9, 21, 14, 20);
-      setIndicatorData(ind);
+      if (indRes.status === "fulfilled") {
+        setIndicatorData(indRes.value);
+      }
+      if (signalRes.status === "fulfilled") {
+        setLiveSignal(signalRes.value);
+      }
+
+      if (historyRes.status === "fulfilled" && historyRes.value?.bars?.length > 0) {
+        const histBars = historyRes.value.bars;
+        // Merge with indicator data if matching
+        const indBarsMap = new Map((indRes.status === "fulfilled" ? indRes.value?.bars || [] : []).map((b) => [b.timestamp.split("T")[0], b]));
+        const formatted = histBars.map((b: any) => {
+          const dt = b.timestamp.split("T")[0];
+          const ind = indBarsMap.get(dt);
+          return {
+            date: dt,
+            close: b.close,
+            open: b.open,
+            high: b.high,
+            low: b.low,
+            volume: b.volume,
+            fast_ema: ind?.fast_ema,
+            slow_ema: ind?.slow_ema,
+            rsi: ind?.rsi,
+          };
+        });
+        setChartBars(formatted);
+      } else if (indRes.status === "fulfilled" && indRes.value?.bars) {
+        // Fallback to indicator bars (last 60)
+        const formatted = indRes.value.bars.slice(-60).map((b) => ({
+          date: b.timestamp.split("T")[0],
+          close: b.close,
+          open: b.open,
+          high: b.high,
+          low: b.low,
+          fast_ema: b.fast_ema,
+          slow_ema: b.slow_ema,
+          rsi: b.rsi,
+          volume: b.volume,
+          volume_ma: b.volume_ma,
+        }));
+        setChartBars(formatted);
+      }
     } catch (err: any) {
       setError(err.message || "Failed to load market data");
     } finally {
@@ -49,28 +118,60 @@ export const MarketView: React.FC<MarketViewProps> = ({ stocks }) => {
 
   useEffect(() => {
     if (selectedSymbol) {
-      loadData(selectedSymbol);
+      loadData(selectedSymbol, timeframe);
     }
-  }, [selectedSymbol]);
+  }, [selectedSymbol, timeframe]);
 
-  const bars = indicatorData?.bars || [];
-  const latestBar = bars.length > 0 ? bars[bars.length - 1] : null;
-  const prevBar = bars.length > 1 ? bars[bars.length - 2] : null;
+  const handleTimeframeChange = (tf: string) => {
+    setTimeframe(tf);
+    loadData(selectedSymbol, tf);
+  };
 
-  const priceChange = latestBar && prevBar ? latestBar.close - prevBar.close : 0;
-  const priceChangePct = latestBar && prevBar ? (priceChange / prevBar.close) * 100 : 0;
-  const isUp = priceChange >= 0;
+  const ltp = liveQuote?.last_price || (chartBars.length > 0 ? chartBars[chartBars.length - 1].close : 0);
+  const change = liveQuote?.change ?? 0;
+  const changePct = liveQuote?.change_percent ?? 0;
+  const isUp = change >= 0;
 
-  // Format data for Recharts (keep last 60 bars for readability)
-  const chartBars = bars.slice(-60).map((b) => ({
-    date: b.timestamp.split("T")[0],
-    close: b.close,
-    fast_ema: b.fast_ema,
-    slow_ema: b.slow_ema,
-    rsi: b.rsi,
-    volume: b.volume,
-    volume_ma: b.volume_ma,
-  }));
+  const getStatusBadge = (status?: string) => {
+    switch (status) {
+      case "LIVE":
+        return <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-[10px] font-bold">● LIVE</span>;
+      case "DELAYED":
+        return <span className="bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded text-[10px] font-bold">DELAYED (15m)</span>;
+      case "HISTORICAL":
+        return <span className="bg-blue-500/10 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded text-[10px] font-bold">HISTORICAL EOD</span>;
+      case "DEMO DATA":
+      case "SIMULATED":
+        return <span className="bg-purple-500/10 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded text-[10px] font-bold">DEMO DATA</span>;
+      default:
+        return <span className="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-[10px] font-bold">{status || "STALE"}</span>;
+    }
+  };
+
+  const getSignalBadge = (sig?: string) => {
+    if (sig === "BUY") {
+      return (
+        <span className="flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+          <ArrowUpRight className="h-3.5 w-3.5" />
+          <span>BUY SIGNAL</span>
+        </span>
+      );
+    }
+    if (sig === "SELL") {
+      return (
+        <span className="flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/40">
+          <ArrowDownRight className="h-3.5 w-3.5" />
+          <span>SELL SIGNAL</span>
+        </span>
+      );
+    }
+    return (
+      <span className="flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">
+        <Clock className="h-3.5 w-3.5" />
+        <span>NEUTRAL / HOLD</span>
+      </span>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -85,24 +186,40 @@ export const MarketView: React.FC<MarketViewProps> = ({ stocks }) => {
           >
             {stocks.map((s) => (
               <option key={s.symbol} value={s.symbol}>
-                {s.symbol} - {s.company_name}
+                {s.symbol.replace(".NS", "")} - {s.company_name}
               </option>
             ))}
           </select>
 
-          <span className="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300 font-medium">
-            Daily OHLCV Candles
-          </span>
+          {/* Timeframe Selector */}
+          <div className="flex items-center space-x-1 bg-slate-950 border border-slate-800 rounded-lg p-0.5">
+            {timeframes.map((tf) => (
+              <button
+                key={tf}
+                onClick={() => handleTimeframeChange(tf)}
+                className={`px-2.5 py-1 text-xs font-bold rounded transition ${
+                  timeframe === tf
+                    ? "bg-emerald-600 text-white shadow"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                }`}
+              >
+                {tf}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <button
-          onClick={() => loadData(selectedSymbol, true)}
-          disabled={loading || refreshing}
-          className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin text-emerald-400" : ""}`} />
-          <span>{refreshing ? "Updating from Yahoo Finance..." : "Refresh Feed"}</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          {getStatusBadge(liveQuote?.data_status)}
+          <button
+            onClick={() => loadData(selectedSymbol, timeframe, true)}
+            disabled={loading || refreshing}
+            className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin text-emerald-400" : ""}`} />
+            <span>{refreshing ? "Fetching Live..." : "Refresh"}</span>
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -112,52 +229,95 @@ export const MarketView: React.FC<MarketViewProps> = ({ stocks }) => {
       )}
 
       {/* Quote Summary Cards */}
-      {latestBar && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
-            <span className="text-[11px] text-slate-400 uppercase font-semibold">LATEST CLOSE</span>
-            <div className="text-xl font-bold text-white mt-1">₹{latestBar.close.toFixed(2)}</div>
-            <div className={`text-xs font-semibold mt-0.5 ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
-              {isUp ? "+" : ""}{priceChange.toFixed(2)} ({isUp ? "+" : ""}{priceChangePct.toFixed(2)}%)
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
+          <span className="text-[11px] text-slate-400 uppercase font-semibold">LAST TRADED PRICE</span>
+          <div className="text-xl font-bold font-mono text-white mt-1">₹{ltp.toFixed(2)}</div>
+          <div className={`text-xs font-semibold mt-0.5 ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+            {isUp ? "+" : ""}{change.toFixed(2)} ({isUp ? "+" : ""}{changePct.toFixed(2)}%)
+          </div>
+        </div>
+
+        <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
+          <span className="text-[11px] text-slate-400 uppercase font-semibold">DAY HIGH / LOW</span>
+          <div className="text-xs font-semibold text-slate-200 mt-1">
+            H: <span className="font-mono text-emerald-400">₹{(liveQuote?.high || 0).toFixed(2)}</span>
+          </div>
+          <div className="text-xs font-semibold text-slate-200 mt-0.5">
+            L: <span className="font-mono text-rose-400">₹{(liveQuote?.low || 0).toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
+          <span className="text-[11px] text-slate-400 uppercase font-semibold">OPEN / PREV CLOSE</span>
+          <div className="text-xs text-slate-200 mt-1">
+            Open: <span className="font-mono font-semibold">₹{(liveQuote?.open || 0).toFixed(2)}</span>
+          </div>
+          <div className="text-xs text-slate-400 mt-0.5">
+            Prev: <span className="font-mono">₹{(liveQuote?.previous_close || 0).toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
+          <span className="text-[11px] text-slate-400 uppercase font-semibold">FAST EMA (9)</span>
+          <div className="text-lg font-bold font-mono text-emerald-400 mt-1">
+            {liveSignal?.indicators?.fast_ema
+              ? `₹${liveSignal.indicators.fast_ema.toFixed(2)}`
+              : indicatorData?.bars?.slice(-1)[0]?.fast_ema
+              ? `₹${indicatorData.bars.slice(-1)[0].fast_ema?.toFixed(2)}`
+              : "—"}
+          </div>
+          <div className="text-[11px] text-slate-500">Short-term trend</div>
+        </div>
+
+        <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
+          <span className="text-[11px] text-slate-400 uppercase font-semibold">SLOW EMA (21)</span>
+          <div className="text-lg font-bold font-mono text-amber-400 mt-1">
+            {liveSignal?.indicators?.slow_ema
+              ? `₹${liveSignal.indicators.slow_ema.toFixed(2)}`
+              : indicatorData?.bars?.slice(-1)[0]?.slow_ema
+              ? `₹${indicatorData.bars.slice(-1)[0].slow_ema?.toFixed(2)}`
+              : "—"}
+          </div>
+          <div className="text-[11px] text-slate-500">Baseline filter</div>
+        </div>
+
+        <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
+          <span className="text-[11px] text-slate-400 uppercase font-semibold">RSI (14)</span>
+          <div className="text-lg font-bold font-mono text-purple-400 mt-1">
+            {liveSignal?.indicators?.rsi
+              ? liveSignal.indicators.rsi.toFixed(2)
+              : indicatorData?.bars?.slice(-1)[0]?.rsi
+              ? indicatorData.bars.slice(-1)[0].rsi?.toFixed(2)
+              : "—"}
+          </div>
+          <div className="text-[11px] text-slate-500">
+            {liveSignal?.indicators?.rsi && liveSignal.indicators.rsi > 70
+              ? "Overbought"
+              : liveSignal?.indicators?.rsi && liveSignal.indicators.rsi < 30
+              ? "Oversold"
+              : "Neutral"}
+          </div>
+        </div>
+      </div>
+
+      {/* Live Strategy Signal Banner */}
+      {liveSignal && (
+        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <Zap className="h-5 w-5 text-amber-400 shrink-0" />
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs uppercase font-bold text-slate-400">Live Strategy Signal:</span>
+                {getSignalBadge(liveSignal.signal)}
+              </div>
+              <p className="text-xs text-slate-300 mt-1">{liveSignal.reason}</p>
             </div>
           </div>
-
-          <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
-            <span className="text-[11px] text-slate-400 uppercase font-semibold">OPEN / HIGH</span>
-            <div className="text-sm font-semibold text-slate-200 mt-1">O: ₹{latestBar.open.toFixed(2)}</div>
-            <div className="text-sm font-semibold text-slate-200">H: ₹{latestBar.high.toFixed(2)}</div>
-          </div>
-
-          <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
-            <span className="text-[11px] text-slate-400 uppercase font-semibold">LOW / VOLUME</span>
-            <div className="text-sm font-semibold text-slate-200 mt-1">L: ₹{latestBar.low.toFixed(2)}</div>
-            <div className="text-xs text-slate-400">Vol: {latestBar.volume.toLocaleString("en-IN")}</div>
-          </div>
-
-          <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
-            <span className="text-[11px] text-slate-400 uppercase font-semibold">FAST EMA (9)</span>
-            <div className="text-lg font-bold text-emerald-400 mt-1">
-              {latestBar.fast_ema ? `₹${latestBar.fast_ema.toFixed(2)}` : "Warming up"}
-            </div>
-            <div className="text-[11px] text-slate-500">Short-term momentum</div>
-          </div>
-
-          <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
-            <span className="text-[11px] text-slate-400 uppercase font-semibold">SLOW EMA (21)</span>
-            <div className="text-lg font-bold text-amber-400 mt-1">
-              {latestBar.slow_ema ? `₹${latestBar.slow_ema.toFixed(2)}` : "Warming up"}
-            </div>
-            <div className="text-[11px] text-slate-500">Baseline trend filter</div>
-          </div>
-
-          <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
-            <span className="text-[11px] text-slate-400 uppercase font-semibold">RSI (14)</span>
-            <div className="text-lg font-bold text-purple-400 mt-1">
-              {latestBar.rsi ? latestBar.rsi.toFixed(2) : "Warming up"}
-            </div>
-            <div className="text-[11px] text-slate-500">
-              {latestBar.rsi ? (latestBar.rsi > 70 ? "Overbought" : latestBar.rsi < 30 ? "Oversold" : "Neutral") : ""}
-            </div>
+          <div className="flex items-center space-x-3 text-xs text-slate-400 shrink-0">
+            <span>Volume Confirmed: <strong className="text-slate-200">{(liveSignal.indicators?.volume || 0) >= (liveSignal.indicators?.volume_ma || 0) ? "YES" : "NO"}</strong></span>
+            <span>•</span>
+            <span>Rule: <strong className="text-slate-200">EMA(9) &gt; EMA(21) + RSI &gt; 50</strong></span>
           </div>
         </div>
       )}
@@ -168,7 +328,7 @@ export const MarketView: React.FC<MarketViewProps> = ({ stocks }) => {
           <div className="flex items-center space-x-2">
             <TrendingUp className="h-5 w-5 text-emerald-400" />
             <h3 className="font-bold text-white text-sm sm:text-base">
-              Price Action & EMA Crossover ({selectedSymbol})
+              Price Action & EMAs ({selectedSymbol.replace(".NS", "")} • {timeframe})
             </h3>
           </div>
           <div className="flex items-center space-x-4 text-xs">

@@ -1,4 +1,4 @@
-# QuantDesk India: Algorithmic Paper Trading & Research Platform
+# QuantDesk India: Live Indian Market Monitoring & Algorithmic Paper Trading Platform
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
@@ -7,9 +7,9 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-A portfolio-quality, production-grade **Indian Stock Market Paper Trading Bot and Quantitative Backtesting Platform**. Designed specifically for software engineering reviews, quantitative trading evaluations, and technical interviews.
+A portfolio-quality, production-grade **Indian Stock Market Real-Time Monitoring and Paper Trading Platform**. Built with FastAPI, Next.js 14, and WebSockets, supporting equities, benchmark Indian indices, and derivatives (F&O option chains).
 
-> **CRITICAL DISCLAIMER**: This application is strictly an educational simulation and paper-trading system. It does **NOT** place real trades, deploy real money, or guarantee trading profits. Live brokerage execution is intentionally omitted.
+> **CRITICAL DISCLAIMER**: This application is strictly an educational simulation and paper-trading system. It does **NOT** place real trades, deploy real money, or execute orders on live brokerages. Live brokerage order execution is intentionally omitted.
 
 ---
 
@@ -17,40 +17,46 @@ A portfolio-quality, production-grade **Indian Stock Market Paper Trading Bot an
 
 ```mermaid
 graph TD
-    UI[Next.js 14 Dashboard\nTypeScript + Tailwind + Recharts] -->|REST API / JSON| API[FastAPI Backend\nASGI / AsyncIO]
-    API --> STRAT[Strategy Engine\nEMA + RSI + Volume]
-    API --> BACK[Backtesting Engine\nt+1 Open Exec + Cost Model]
-    API --> PAPER[Paper Trading Engine\nOrder Matching + Risk Guard]
-    API --> CACHE[Data Ingestion & Caching\nRelational Deduplication]
-    CACHE --> FEED[(Yahoo Finance API / Mock Data)]
-    API --> DB[(SQLAlchemy 2.0 ORM\nPostgreSQL / SQLite)]
-    PAPER --> DB
+    UI[Next.js 14 Dashboard\nTypeScript + Tailwind + Recharts] -->|WebSocket & REST API| API[FastAPI Gateway\nASGI / AsyncIO]
+    API --> STATUS[Market Session Service\nIST 09:15-15:30 Schedule]
+    API --> STREAM[WebSocket Manager\nSub/Pub Tick Stream]
+    API --> AGG[Candle Aggregator\n1m, 5m, 15m, 1D]
+    API --> CACHE[Live Market Cache\nIn-Memory Staleness Tracking]
+    API --> FNO[F&O Derivatives Engine\nBlack-Scholes Chains & Greeks]
+    API --> STRAT[Live Strategy Evaluator\nEMA 9/21 + RSI 14 + Volume]
+    API --> PAPER[Paper Trading Engine\nFIFO P&L + Risk Guard]
+    API --> PROVIDER[MarketDataProvider Abstraction\nLive / Historical / Mock]
+    PROVIDER --> LIVE_FEED[(Yahoo Finance / Broker API)]
+    PAPER --> DB[(SQLAlchemy ORM\nSQLite / PostgreSQL)]
 ```
 
 ---
 
 ## 🚀 Key Features
 
-* **NSE Equities Universe**: Native support for top Indian blue-chip equities (`RELIANCE.NS`, `TCS.NS`, `INFY.NS`, `HDFCBANK.NS`, `ICICIBANK.NS`).
-* **Rule-Based Explainable Strategy**: Fast EMA (9) + Slow EMA (21) crossover with RSI (14) momentum confirmation and Volume Moving Average (20) filter. Completely free of black-box ML.
-* **Zero Look-Ahead Bias Backtesting**: Signals calculated at bar $t$'s Close are strictly filled at bar $t+1$'s Open. Includes a conservative intrabar stop-loss priority rule.
-* **Realistic Indian Transaction Cost Model**: Models statutory Indian Cash Delivery charges:
-  * STT (0.1% on buy & sell)
-  * Exchange Turnover (0.00325%)
-  * SEBI Charges (0.0001%)
-  * GST (18% on fees)
-  * Stamp Duty (0.015% on buy)
-  * Slippage (0.05%)
-* **Strict Paper Trading & Risk Layer**:
-  * Prevents overselling / naked short sales.
-  * Enforces maximum capital allocation per trade (default 10%).
-  * Calculates real-time FIFO unrealized and realized P&L.
-* **Interactive Next.js Dashboard**:
-  * Portfolio overview with real-time equity & cash allocation.
-  * Multi-timeframe interactive candlestick & indicator charts.
-  * Parameter-customizable Strategy Signal evaluator.
-  * Comparative Backtesting Lab with equity curves vs. Buy & Hold benchmark.
-  * Trade Audit Log with tax and slippage transparency.
+* **Real-Time Indian Market Coverage**:
+  * **Top 8 NSE Equities Watchlist**: `RELIANCE`, `TCS`, `INFY`, `HDFCBANK`, `ICICIBANK`, `SBIN`, `ITC`, `LT`.
+  * **Benchmark Indices**: `NIFTY 50`, `SENSEX`, `BANK NIFTY` with daily ranges, change metrics, and interactive charts.
+  * **F&O Derivatives Module**: Real-time NSE Option Chain featuring Call Options (CE), Put Options (PE), Strike Ladder with ATM detection, Open Interest (OI), Change in OI, and Implied Volatility (IV).
+* **Strict Data Transparency Labels**:
+  * Every widget explicitly tags data freshness: `LIVE`, `DELAYED (15m)`, `HISTORICAL EOD`, `DEMO DATA / SIMULATED`, `STALE`, or `UNAVAILABLE`.
+  * In-memory cache automatically flags quotes older than 60 seconds as `STALE`.
+* **Indian Market Session Schedule**:
+  * Accurate `Asia/Kolkata` time awareness:
+    * `PRE-OPEN`: 09:00 - 09:15 IST
+    * `MARKET OPEN`: 09:15 - 15:30 IST
+    * `POST-MARKET`: 15:30 - 16:00 IST
+    * `MARKET CLOSED`: Weekends and after 16:00 IST
+* **Real-Time Streaming & Candle Aggregation**:
+  * Full-duplex WebSocket connection at `/api/v1/ws/market` with subscription management.
+  * In-flight aggregation of raw price ticks into `1m`, `5m`, `15m`, and `1D` OHLCV candlestick bars.
+* **Live Strategy Signal Evaluator**:
+  * Dual Exponential Moving Average (EMA 9 & EMA 21) crossover with RSI (14) momentum filter and Volume Moving Average (20) confirmation.
+  * Evaluates live ticks against active strategy rules in real-time.
+* **100% Risk-Guarded Paper Trading Engine**:
+  * Executes market orders at live LTP with real-time unrealized and realized P&L accounting.
+  * Rigorous Indian statutory transaction cost model (STT, Exchange Turnover, SEBI charges, GST, Stamp Duty, Slippage).
+  * Enforces maximum capital allocation per trade and prevents naked short sales.
 
 ---
 
@@ -60,31 +66,38 @@ graph TD
 TradeBot/
 ├── backend/
 │   ├── app/
-│   │   ├── api/v1/endpoints/  # FastAPI route handlers (stocks, strategy, backtest, paper, bot)
+│   │   ├── api/v1/endpoints/  # FastAPI routes (market, fno, ws, stocks, strategy, backtest, paper)
 │   │   ├── backtesting/       # Backtesting engine, performance metrics, and cost model
-│   │   ├── core/              # Global config, pydantic settings, logging
-│   │   ├── database/          # SQLAlchemy session, engine, and migrations
+│   │   ├── core/              # Global config, pydantic settings, IST time helper
+│   │   ├── database/          # SQLAlchemy session, engine, and init seed
 │   │   ├── models/            # SQLAlchemy ORM models (stocks, orders, trades, positions, accounts)
 │   │   ├── paper_trading/     # Risk manager, portfolio accounting, order matching
-│   │   ├── schemas/           # Pydantic validation schemas
-│   │   ├── services/          # Market data providers, indicators, validation, ingestion
+│   │   ├── schemas/           # Pydantic schemas (market quotes, F&O chains, orders, signals)
+│   │   ├── services/
+│   │   │   ├── market_data/   # MarketDataProvider abstraction (Base, Live, Mock, Historical)
+│   │   │   ├── market_cache.py# In-memory quote cache with staleness detection
+│   │   │   ├── market_status.py# IST trading session evaluator
+│   │   │   ├── candle_builder.py# Tick-to-candle OHLCV aggregator (1m, 5m, 15m, 1D)
+│   │   │   ├── live_strategy_evaluator.py# Real-time strategy signal bridge
+│   │   │   └── indicators.py  # EMA, RSI, Volume MA indicators
 │   │   ├── strategies/        # BaseStrategy & EMARsiVolumeStrategy
 │   │   └── main.py            # ASGI application entrypoint
-│   ├── tests/                 # Comprehensive Pytest test suite (41 tests, 100% offline)
+│   ├── tests/                 # Comprehensive Pytest suite (73 tests, 100% offline)
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
 │   │   ├── app/               # Next.js 14 App Router (layout, page, styles)
-│   │   ├── components/        # Dashboard, Market, Strategy, Backtest, Paper, Trades views
+│   │   ├── components/        # Dashboard, Indices, F&O Option Chain, Market, Strategy, Paper
+│   │   ├── hooks/             # useMarketWebSocket custom hook
 │   │   ├── services/          # Strongly-typed API client
 │   │   └── types/             # TypeScript data contracts matching Pydantic schemas
 │   ├── Dockerfile
 │   └── package.json
 ├── docs/
-│   ├── ARCHITECTURE.md        # Deep dive into architectural design decisions
-│   ├── TRADING_CONCEPTS.md    # Guide to indicators, market mechanics, and math
-│   └── INTERVIEW_GUIDE.md     # 18 Technical Interview Questions & In-Depth Answers
+│   ├── ARCHITECTURE.md        # Architectural design & provider abstraction
+│   ├── TRADING_CONCEPTS.md    # Financial mechanics, Option Greeks, and indicators
+│   └── INTERVIEW_GUIDE.md     # Technical interview questions and explanations
 ├── docker-compose.yml         # Multi-container orchestration (DB + Backend + Frontend)
 ├── .env.example
 └── README.md
@@ -129,21 +142,9 @@ npm run dev
 
 ---
 
-### Option 2: Docker Compose (Production Stack)
-
-Run the full stack (PostgreSQL + FastAPI + Next.js) with a single command:
-```bash
-docker compose up --build
-```
-* Frontend: [http://localhost:3000](http://localhost:3000)
-* Backend API: [http://localhost:8000/api/v1](http://localhost:8000/api/v1)
-* API Swagger Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
-
 ## 🧪 Running Automated Tests
 
-The backend includes a comprehensive, 100% offline-isolated Pytest test suite covering indicators, strategies, backtesting execution, risk management, and API endpoints.
+The backend includes a comprehensive, 100% offline-isolated Pytest test suite covering market provider abstraction, caching, market status schedules, F&O option chains, WebSocket streaming, indicators, strategies, and paper trading risk management:
 
 ```bash
 cd backend
@@ -152,18 +153,8 @@ python -m pytest tests/ -v
 
 Output:
 ```
-============================== 41 passed in 4.25s ==============================
+============================== 73 passed in 3.46s ==============================
 ```
-
----
-
-## 📚 Technical Interview Preparation
-
-Review [`docs/INTERVIEW_GUIDE.md`](docs/INTERVIEW_GUIDE.md) for in-depth answers to core technical interview questions:
-1. Architectural choices: FastAPI vs Flask/Django, PostgreSQL vs MongoDB/Redis.
-2. Financial mathematics: EMA weighting vs SMA, Wilder's RSI smoothing.
-3. Quantitative rigor: Preventing look-ahead bias, handling transaction costs and slippage.
-4. Risk engineering: Preventing overselling, atomic transaction isolation, and pluggable broker adapters.
 
 ---
 

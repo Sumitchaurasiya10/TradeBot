@@ -1,9 +1,106 @@
+export type DataStatus =
+  | "LIVE"
+  | "DELAYED"
+  | "HISTORICAL"
+  | "SIMULATED"
+  | "DEMO DATA"
+  | "STALE"
+  | "UNAVAILABLE";
+
 export interface Stock {
   id: number;
   symbol: string;
   company_name: string;
   sector?: string;
   is_active: boolean;
+}
+
+export interface Quote {
+  symbol: string;
+  exchange: string;
+  asset_type: string;
+  timestamp: string;
+  last_price: number;
+  open?: number | null;
+  high?: number | null;
+  low?: number | null;
+  previous_close?: number | null;
+  change?: number | null;
+  change_percent?: number | null;
+  volume: number;
+  bid_price?: number | null;
+  ask_price?: number | null;
+  bid_quantity?: number | null;
+  ask_quantity?: number | null;
+  data_status: DataStatus;
+}
+
+export interface IndexQuote {
+  symbol: string;
+  exchange: string;
+  timestamp: string;
+  last_price: number;
+  open?: number | null;
+  high?: number | null;
+  low?: number | null;
+  previous_close?: number | null;
+  change?: number | null;
+  change_percent?: number | null;
+  data_status: DataStatus;
+}
+
+export interface MarketSessionStatus {
+  session: "PRE-OPEN" | "MARKET OPEN" | "POST-MARKET" | "MARKET CLOSED" | "DATA UNAVAILABLE";
+  is_open: boolean;
+  current_time_ist: string;
+  session_hours: string;
+  timezone: string;
+  next_open_time?: string | null;
+  next_close_time?: string | null;
+  message: string;
+}
+
+export interface FNOQuote {
+  underlying: string;
+  symbol: string;
+  exchange: string;
+  instrument_type: string;
+  expiry: string;
+  strike_price?: number | null;
+  option_type?: "CE" | "PE" | null;
+  timestamp: string;
+  last_price: number;
+  open?: number | null;
+  high?: number | null;
+  low?: number | null;
+  previous_close?: number | null;
+  change?: number | null;
+  change_percent?: number | null;
+  volume: number;
+  open_interest: number;
+  change_in_oi: number;
+  bid_price?: number | null;
+  ask_price?: number | null;
+  bid_quantity?: number | null;
+  ask_quantity?: number | null;
+  implied_volatility?: number | null;
+  data_status: DataStatus;
+}
+
+export interface OptionChainStrikeRow {
+  strike_price: number;
+  call?: FNOQuote | null;
+  put?: FNOQuote | null;
+}
+
+export interface OptionChainResponse {
+  underlying: string;
+  underlying_price: number;
+  expiry: string;
+  available_expiries: string[];
+  timestamp: string;
+  data_status: DataStatus;
+  strikes: OptionChainStrikeRow[];
 }
 
 export interface MarketDataPoint {
@@ -136,7 +233,7 @@ export interface OrderRequest {
   symbol: string;
   side: "BUY" | "SELL";
   quantity: number;
-  price: number;
+  price?: number;
   stop_loss_pct?: number;
   take_profit_pct?: number;
 }
