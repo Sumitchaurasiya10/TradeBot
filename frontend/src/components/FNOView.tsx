@@ -206,24 +206,24 @@ export const FNOView: React.FC = () => {
                       {call?.implied_volatility ? `${call.implied_volatility}%` : "—"}
                     </td>
                     <td className="py-2 px-2 text-right font-bold text-white">
-                      ₹{call?.last_price?.toFixed(2) || "—"}
+                      {call?.last_price != null ? `₹${Number(call.last_price).toFixed(2)}` : "—"}
                     </td>
                     <td className={`py-2 px-2 text-right border-r border-slate-700 font-semibold ${callUp ? "text-emerald-400" : "text-rose-400"}`}>
-                      {call?.change ? `${callUp ? "+" : ""}${call.change.toFixed(2)}` : "—"}
+                      {call?.change != null ? `${callUp ? "+" : ""}${Number(call.change).toFixed(2)}` : "—"}
                     </td>
 
                     {/* Strike Price Column */}
                     <td className={`py-2 px-4 font-bold ${isATM ? "bg-amber-500/20 text-amber-300 font-extrabold" : "bg-slate-800/50 text-slate-200"}`}>
-                      {row.strike_price.toLocaleString("en-IN")}
+                      {Number(row.strike_price || 0).toLocaleString("en-IN")}
                       {isATM && <span className="ml-1 text-[9px] px-1 py-0.2 rounded bg-amber-400/20 text-amber-300">ATM</span>}
                     </td>
 
                     {/* Put Columns */}
                     <td className={`py-2 px-2 text-left border-l border-slate-700 font-semibold ${putUp ? "text-emerald-400" : "text-rose-400"}`}>
-                      {put?.change ? `${putUp ? "+" : ""}${put.change.toFixed(2)}` : "—"}
+                      {put?.change != null ? `${putUp ? "+" : ""}${Number(put.change).toFixed(2)}` : "—"}
                     </td>
                     <td className="py-2 px-2 text-left font-bold text-white">
-                      ₹{put?.last_price?.toFixed(2) || "—"}
+                      {put?.last_price != null ? `₹${Number(put.last_price).toFixed(2)}` : "—"}
                     </td>
                     <td className="py-2 px-2 text-left text-slate-400">
                       {put?.implied_volatility ? `${put.implied_volatility}%` : "—"}

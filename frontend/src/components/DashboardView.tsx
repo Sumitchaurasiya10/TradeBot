@@ -83,12 +83,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div className="mt-2 flex items-baseline justify-between">
                   <span className="text-base font-bold text-white tracking-tight">{idx.symbol}</span>
                   <span className="text-lg font-black font-mono text-white">
-                    {idx.last_price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    {Number(idx.last_price || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
                 <div className={`mt-1 flex items-center justify-end text-xs font-semibold ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
                   {isUp ? <ArrowUpRight className="h-3.5 w-3.5 mr-0.5" /> : <ArrowDownRight className="h-3.5 w-3.5 mr-0.5" />}
-                  <span>{isUp ? "+" : ""}{idx.change?.toFixed(2)} ({isUp ? "+" : ""}{idx.change_percent?.toFixed(2)}%)</span>
+                  <span>{isUp ? "+" : ""}{Number(idx.change || 0).toFixed(2)} ({isUp ? "+" : ""}{Number(idx.change_percent || 0).toFixed(2)}%)</span>
                 </div>
               </div>
             );
@@ -210,9 +210,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
               {coreWatchlist.map((stock) => {
                 const quote = quotes[stock.symbol];
-                const price = quote?.last_price || 0;
-                const change = quote?.change || 0;
-                const pct = quote?.change_percent || 0;
+                const price = Number(quote?.last_price || 0);
+                const change = Number(quote?.change || 0);
+                const pct = Number(quote?.change_percent || 0);
                 const isUp = change >= 0;
                 const statusTag = quote?.data_status || "DELAYED";
 
@@ -230,10 +230,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       {price > 0 ? `${isUp ? "+" : ""}${change.toFixed(2)} (${isUp ? "+" : ""}${pct.toFixed(2)}%)` : "—"}
                     </td>
                     <td className="py-3 px-4 text-right text-slate-400">
-                      {quote?.high && quote?.low ? `₹${quote.low.toFixed(1)} - ₹${quote.high.toFixed(1)}` : "—"}
+                      {quote?.high && quote?.low ? `₹${Number(quote.low).toFixed(1)} - ₹${Number(quote.high).toFixed(1)}` : "—"}
                     </td>
                     <td className="py-3 px-4 text-right text-slate-400">
-                      {quote?.volume ? quote.volume.toLocaleString("en-IN") : "—"}
+                      {quote?.volume ? Number(quote.volume).toLocaleString("en-IN") : "—"}
                     </td>
                     <td className="py-3 px-4 text-center font-sans">
                       <span

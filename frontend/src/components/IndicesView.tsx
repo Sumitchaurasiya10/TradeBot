@@ -105,12 +105,12 @@ export const IndicesView: React.FC<IndicesViewProps> = ({ indices: liveIndices, 
 
               <div className="mt-4 flex items-baseline justify-between">
                 <span className="text-2xl font-black font-mono text-white">
-                  {idx.last_price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  {Number(idx.last_price || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                 </span>
                 <div className={`flex items-center text-xs font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
                   {isUp ? <ArrowUpRight className="h-4 w-4 mr-0.5" /> : <ArrowDownRight className="h-4 w-4 mr-0.5" />}
-                  <span>{isUp ? "+" : ""}{idx.change?.toFixed(2)}</span>
-                  <span className="ml-1">({isUp ? "+" : ""}{idx.change_percent?.toFixed(2)}%)</span>
+                  <span>{isUp ? "+" : ""}{Number(idx.change || 0).toFixed(2)}</span>
+                  <span className="ml-1">({isUp ? "+" : ""}{Number(idx.change_percent || 0).toFixed(2)}%)</span>
                 </div>
               </div>
 
@@ -118,11 +118,11 @@ export const IndicesView: React.FC<IndicesViewProps> = ({ indices: liveIndices, 
               <div className="mt-4 pt-3 border-t border-slate-800 grid grid-cols-2 gap-2 text-[11px] text-slate-400">
                 <div>
                   <span className="block text-slate-500">Day High</span>
-                  <span className="font-mono text-slate-300">{idx.high ? idx.high.toLocaleString("en-IN") : "—"}</span>
+                  <span className="font-mono text-slate-300">{idx.high ? Number(idx.high).toLocaleString("en-IN") : "—"}</span>
                 </div>
                 <div>
                   <span className="block text-slate-500">Day Low</span>
-                  <span className="font-mono text-slate-300">{idx.low ? idx.low.toLocaleString("en-IN") : "—"}</span>
+                  <span className="font-mono text-slate-300">{idx.low ? Number(idx.low).toLocaleString("en-IN") : "—"}</span>
                 </div>
               </div>
             </div>
