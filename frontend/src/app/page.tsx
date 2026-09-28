@@ -7,7 +7,6 @@ import { IndicesView } from "../components/IndicesView";
 import { FNOView } from "../components/FNOView";
 import { MarketView } from "../components/MarketView";
 import { StrategyView } from "../components/StrategyView";
-import { BacktestView } from "../components/BacktestView";
 import { PaperTradingView } from "../components/PaperTradingView";
 import { TradesView } from "../components/TradesView";
 import { OrderModal } from "../components/OrderModal";
@@ -140,8 +139,6 @@ export default function Home() {
         {activeTab === "market" && <MarketView stocks={stocks} />}
 
         {activeTab === "strategy" && <StrategyView stocks={stocks} />}
-
-        {activeTab === "backtest" && <BacktestView stocks={stocks} />}
 
         {activeTab === "paper" && (
           <PaperTradingView

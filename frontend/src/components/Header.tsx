@@ -27,7 +27,6 @@ export const Header: React.FC<HeaderProps> = ({
     { id: "market", label: "Market Viewer" },
     { id: "fno", label: "F&O Lab" },
     { id: "strategy", label: "Strategy Signals" },
-    { id: "backtest", label: "Backtesting Lab" },
     { id: "paper", label: "Paper Trading" },
     { id: "trades", label: "Trade History" },
   ];
