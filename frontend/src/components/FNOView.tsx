@@ -146,8 +146,12 @@ export const FNOView: React.FC = () => {
 
       {/* Option Chain Table */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <div className="px-4 py-2.5 bg-slate-950/60 border-b border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+          <span className="font-semibold text-slate-300">Live Derivatives Heatmap & Strikes</span>
+          <span className="text-[11px] text-emerald-400 sm:hidden">Swipe horizontally &rarr;</span>
+        </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-center text-xs">
+          <table className="w-full text-center text-xs min-w-[820px] whitespace-nowrap">
             <thead>
               {/* Header row 1: CALLS vs STRIKE vs PUTS */}
               <tr className="bg-slate-800 text-xs font-bold uppercase tracking-wider border-b border-slate-700">

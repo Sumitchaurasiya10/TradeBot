@@ -440,8 +440,8 @@ export const PaperTradingView: React.FC<PaperTradingViewProps> = ({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-slate-950/80 text-xs uppercase text-slate-400 border-b border-slate-800 font-sans">
+            <table className="w-full text-left text-sm text-slate-300 min-w-[660px]">
+              <thead className="bg-slate-950/80 text-xs uppercase text-slate-400 border-b border-slate-800 font-sans whitespace-nowrap">
                 <tr>
                   <th className="py-3 px-3">Symbol</th>
                   <th className="py-3 px-3">Qty</th>
@@ -452,7 +452,7 @@ export const PaperTradingView: React.FC<PaperTradingViewProps> = ({
                   <th className="py-3 px-3 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
+              <tbody className="divide-y divide-slate-800/60 font-mono text-xs whitespace-nowrap">
                 {positions.map((pos) => {
                   const isProfitable = Number(pos.unrealized_pnl) >= 0;
                   return (

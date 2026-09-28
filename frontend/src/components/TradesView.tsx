@@ -106,7 +106,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ stocks }) => {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
           <div className="text-xs text-slate-400">Total Filtered Trades</div>
           <div className="text-xl font-bold text-slate-200 mt-1">
@@ -164,8 +164,8 @@ export const TradesView: React.FC<TradesViewProps> = ({ stocks }) => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-800/60 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
+            <table className="w-full text-left text-sm min-w-[760px]">
+              <thead className="bg-slate-800/60 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800 whitespace-nowrap">
                 <tr>
                   <th className="py-3 px-4">Trade ID</th>
                   <th className="py-3 px-4">Timestamp (IST)</th>
@@ -178,7 +178,7 @@ export const TradesView: React.FC<TradesViewProps> = ({ stocks }) => {
                   <th className="py-3 px-4 text-right">Realized P&L (₹)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
+              <tbody className="divide-y divide-slate-800/60 font-mono text-xs whitespace-nowrap">
                 {filteredTrades.map((t) => {
                   const val = t.quantity * t.price;
                   const isBuy = t.side === "BUY";

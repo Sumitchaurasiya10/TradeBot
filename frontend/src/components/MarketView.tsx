@@ -192,7 +192,7 @@ export const MarketView: React.FC<MarketViewProps> = ({ stocks }) => {
           </select>
 
           {/* Timeframe Selector */}
-          <div className="flex items-center space-x-1 bg-slate-950 border border-slate-800 rounded-lg p-0.5">
+          <div className="flex items-center space-x-1 bg-slate-950 border border-slate-800 rounded-lg p-0.5 overflow-x-auto max-w-full">
             {timeframes.map((tf) => (
               <button
                 key={tf}
@@ -323,10 +323,10 @@ export const MarketView: React.FC<MarketViewProps> = ({ stocks }) => {
       )}
 
       {/* Main Price & EMA Chart */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 backdrop-blur">
-        <div className="flex justify-between items-center mb-4">
+      <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 sm:p-5 backdrop-blur">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
           <div className="flex items-center space-x-2">
-            <TrendingUp className="h-5 w-5 text-emerald-400" />
+            <TrendingUp className="h-5 w-5 text-emerald-400 shrink-0" />
             <h3 className="font-bold text-white text-sm sm:text-base">
               Price Action & EMAs ({selectedSymbol.replace(".NS", "")} • {timeframe})
             </h3>

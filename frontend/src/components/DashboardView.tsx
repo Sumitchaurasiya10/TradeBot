@@ -61,7 +61,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     <div className="space-y-6">
       {/* 1. Benchmark Indices Live Strip */}
       {indices.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {indices.map((idx) => {
             const isUp = (idx.change || 0) >= 0;
             return (
@@ -100,24 +100,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* 2. Portfolio Overview Banner */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-6 backdrop-blur">
+      <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 sm:p-6 backdrop-blur">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Paper Portfolio Overview</h2>
-            <p className="text-sm text-slate-400">
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">Paper Portfolio Overview</h2>
+            <p className="text-xs sm:text-sm text-slate-400">
               Account: <span className="text-slate-200 font-medium">{portfolio?.account_name || "Default Paper Account"}</span> (INR ₹)
             </p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
             <button
               onClick={() => setActiveTab("paper")}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm rounded-lg transition shadow-lg shadow-emerald-950/40"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs sm:text-sm rounded-lg transition shadow-lg shadow-emerald-950/40 text-center"
             >
               Place Simulated Order
             </button>
             <button
               onClick={() => setActiveTab("fno")}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm rounded-lg border border-slate-700 transition"
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs sm:text-sm rounded-lg border border-slate-700 transition text-center"
             >
               F&O Option Chain
             </button>
@@ -125,7 +125,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Portfolio Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6">
           <div className="bg-slate-950/60 p-4 rounded-lg border border-slate-800">
             <div className="flex items-center justify-between text-slate-400 text-xs">
               <span>Total Equity</span>
@@ -197,8 +197,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-800/60 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
+          <table className="w-full text-left text-sm min-w-[700px]">
+            <thead className="bg-slate-800/60 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800 whitespace-nowrap">
               <tr>
                 <th className="py-3 px-4">Symbol</th>
                 <th className="py-3 px-4">Company</th>
@@ -210,7 +210,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <th className="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
+            <tbody className="divide-y divide-slate-800/60 font-mono text-xs whitespace-nowrap">
               {coreWatchlist.map((stock) => {
                 const quote = quotes[stock.symbol];
                 const price = Number(quote?.last_price || 0);
