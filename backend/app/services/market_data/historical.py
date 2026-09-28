@@ -40,9 +40,10 @@ class HistoricalMarketDataProvider(MarketDataProvider):
         "^NSEBANK": "^NSEBANK",
     }
 
-    def __init__(self):
+    def __init__(self, default_status: DataStatus = DataStatus.LIVE):
         self._yf = YFinanceProvider()
-        self._fno_fallback = MockLiveMarketDataProvider()
+        self._default_status = default_status
+        self._fno_fallback = MockLiveMarketDataProvider(default_status=default_status)
 
     def get_provider_name(self) -> str:
         return "yfinance"
@@ -95,7 +96,7 @@ class HistoricalMarketDataProvider(MarketDataProvider):
                     ask_price=lp_dec + Decimal("0.05"),
                     bid_quantity=1000,
                     ask_quantity=1000,
-                    data_status=DataStatus.DELAYED,
+                    data_status=self._default_status,
                 )
         except Exception as e:
             logger.warning(f"Error fetching quote for '{clean}' from yfinance: {e}")
@@ -139,7 +140,7 @@ class HistoricalMarketDataProvider(MarketDataProvider):
                     previous_close=pc_dec,
                     change=round(chg, 2),
                     change_percent=round(pct, 2),
-                    data_status=DataStatus.DELAYED,
+                    data_status=self._default_status,
                 )
         except Exception as e:
             logger.warning(f"Error fetching index '{symbol}' from yfinance: {e}")

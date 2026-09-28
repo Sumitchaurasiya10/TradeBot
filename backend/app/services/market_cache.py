@@ -16,7 +16,7 @@ class LiveMarketCache:
     it is served with DataStatus.STALE rather than pretending to be live.
     """
 
-    def __init__(self, stale_threshold_seconds: int = 60):
+    def __init__(self, stale_threshold_seconds: int = 3600):
         self._quotes: Dict[str, Quote] = {}
         self._indices: Dict[str, IndexQuote] = {}
         self._option_chains: Dict[str, OptionChainResponse] = {}

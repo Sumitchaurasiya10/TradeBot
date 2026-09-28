@@ -47,9 +47,10 @@ class MockLiveMarketDataProvider(MarketDataProvider):
         "BANK NIFTY": {"price": 53200.00, "prev_close": 52950.00, "open": 53020.00, "high": 53380.00, "low": 52980.00, "exchange": "NSE"},
     }
 
-    def __init__(self, tick_seed: int = 42):
+    def __init__(self, tick_seed: int = 42, default_status: DataStatus = DataStatus.DEMO_DATA):
         self._seed = tick_seed
         self._counter = 0
+        self._status = default_status
 
     def get_provider_name(self) -> str:
         return "mock"
@@ -94,7 +95,7 @@ class MockLiveMarketDataProvider(MarketDataProvider):
             ask_price=price + Decimal("0.05"),
             bid_quantity=1500,
             ask_quantity=1200,
-            data_status=DataStatus.DEMO_DATA,
+            data_status=self._status,
         )
 
     async def get_quotes(self, symbols: List[str]) -> List[Quote]:
@@ -134,7 +135,7 @@ class MockLiveMarketDataProvider(MarketDataProvider):
             previous_close=prev_close,
             change=round(change, 2),
             change_percent=round(pct, 2),
-            data_status=DataStatus.DEMO_DATA,
+            data_status=self._status,
         )
 
     async def get_indices_quotes(self) -> List[IndexQuote]:
@@ -236,7 +237,7 @@ class MockLiveMarketDataProvider(MarketDataProvider):
                 bid_quantity=1800,
                 ask_quantity=1500,
                 implied_volatility=Decimal("14.50"),
-                data_status=DataStatus.DEMO_DATA,
+                data_status=self._status,
             )
 
             put_quote = FNOQuote(
@@ -259,7 +260,7 @@ class MockLiveMarketDataProvider(MarketDataProvider):
                 bid_quantity=1600,
                 ask_quantity=1400,
                 implied_volatility=Decimal("15.20"),
-                data_status=DataStatus.DEMO_DATA,
+                data_status=self._status,
             )
 
             strikes_list.append(OptionChainStrikeRow(strike_price=k, call=call_quote, put=put_quote))
@@ -270,7 +271,7 @@ class MockLiveMarketDataProvider(MarketDataProvider):
             expiry=selected_expiry,
             available_expiries=expiries,
             timestamp=now,
-            data_status=DataStatus.DEMO_DATA,
+            data_status=self._status,
             strikes=strikes_list,
         )
 

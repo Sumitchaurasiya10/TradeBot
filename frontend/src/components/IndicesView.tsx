@@ -93,13 +93,14 @@ export const IndicesView: React.FC<IndicesViewProps> = ({ indices: liveIndices, 
                   <h3 className="text-lg font-bold text-white">{idx.symbol}</h3>
                 </div>
                 <span
-                  className={`text-[10px] px-2 py-0.5 rounded font-mono font-semibold ${
+                  className={`text-[10px] px-2 py-0.5 rounded font-mono font-semibold inline-flex items-center space-x-1 ${
                     idx.data_status === "LIVE"
                       ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
                       : "bg-purple-500/10 text-purple-300 border border-purple-500/30"
                   }`}
                 >
-                  {idx.data_status}
+                  {idx.data_status === "LIVE" && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse mr-1" />}
+                  <span>{idx.data_status}</span>
                 </span>
               </div>
 

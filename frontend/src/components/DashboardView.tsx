@@ -71,13 +71,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-slate-400">{idx.exchange} INDEX</span>
                   <span
-                    className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                    className={`inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
                       idx.data_status === "LIVE"
                         ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
                         : "bg-purple-500/10 text-purple-300 border border-purple-500/30"
                     }`}
                   >
-                    {idx.data_status}
+                    {idx.data_status === "LIVE" && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse mr-1" />}
+                    <span>{idx.data_status}</span>
                   </span>
                 </div>
                 <div className="mt-2 flex items-baseline justify-between">
@@ -237,15 +238,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </td>
                     <td className="py-3 px-4 text-center font-sans">
                       <span
-                        className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
+                        className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold ${
                           statusTag === "LIVE"
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
                             : statusTag === "DEMO DATA"
                             ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
                             : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                         }`}
                       >
-                        {statusTag}
+                        {statusTag === "LIVE" && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse mr-1" />}
+                        <span>{statusTag}</span>
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center font-sans">

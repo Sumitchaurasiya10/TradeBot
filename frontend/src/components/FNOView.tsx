@@ -60,8 +60,13 @@ export const FNOView: React.FC = () => {
           <div>
             <div className="flex items-center space-x-2">
               <h2 className="text-xl font-bold text-white tracking-tight">F&O Option Chain</h2>
-              <span className="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-purple-500/10 text-purple-300 border border-purple-500/30">
-                {chain?.data_status || "DEMO DATA"}
+              <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold inline-flex items-center space-x-1 ${
+                chain?.data_status === "LIVE"
+                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                  : "bg-purple-500/10 text-purple-300 border border-purple-500/30"
+              }`}>
+                {chain?.data_status === "LIVE" && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse mr-1" />}
+                <span>{chain?.data_status || "LIVE"}</span>
               </span>
             </div>
             <p className="text-xs text-slate-400">
