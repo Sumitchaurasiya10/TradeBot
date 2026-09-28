@@ -234,6 +234,7 @@ export interface OrderRequest {
   side: "BUY" | "SELL";
   quantity: number;
   price?: number;
+  order_type?: "MARKET" | "LIMIT" | string;
   stop_loss_pct?: number;
   take_profit_pct?: number;
 }

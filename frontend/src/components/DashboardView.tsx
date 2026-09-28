@@ -22,6 +22,7 @@ interface DashboardViewProps {
   quotes?: Record<string, Quote>;
   setActiveTab: (tab: string) => void;
   onSelectStock?: (symbol: string) => void;
+  onOpenTradeModal?: (symbol: string, side?: "BUY" | "SELL") => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -31,6 +32,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   quotes = {},
   setActiveTab,
   onSelectStock,
+  onOpenTradeModal,
 }) => {
   const initialBalance = portfolio?.initial_balance || 100000;
   const cash = portfolio?.cash || 100000;
@@ -262,10 +264,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           Chart
                         </button>
                         <button
-                          onClick={() => setActiveTab("paper")}
-                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] transition"
+                          onClick={() => {
+                            if (onOpenTradeModal) {
+                              onOpenTradeModal(stock.symbol, "BUY");
+                            } else {
+                              setActiveTab("paper");
+                            }
+                          }}
+                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[11px] transition shadow"
+                          title={`Buy ${stock.symbol}`}
                         >
-                          Trade
+                          B
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (onOpenTradeModal) {
+                              onOpenTradeModal(stock.symbol, "SELL");
+                            } else {
+                              setActiveTab("paper");
+                            }
+                          }}
+                          className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded text-[11px] transition shadow"
+                          title={`Sell ${stock.symbol}`}
+                        >
+                          S
                         </button>
                       </div>
                     </td>

@@ -99,8 +99,11 @@ class PaperTradingEngine:
 
     def update_market_price(self, symbol: str, current_price: Decimal) -> None:
         """Updates the current market price of an open position for unrealized P&L."""
-        if symbol in self.positions:
-            self.positions[symbol].update_price(current_price)
+        clean = symbol.upper().replace(".NS", "").replace(".BO", "").strip()
+        sym_ns = f"{clean}.NS"
+        target = sym_ns if sym_ns in self.positions else (clean if clean in self.positions else None)
+        if target:
+            self.positions[target].update_price(Decimal(str(current_price)))
 
     def place_order(
         self,
@@ -379,8 +382,10 @@ class PaperTradingEngine:
         """Updates the current market price and unrealized P&L for all open positions."""
         for symbol, price in prices.items():
             clean = symbol.upper().replace(".NS", "").replace(".BO", "").strip()
-            if clean in self.positions:
-                self.positions[clean].update_price(Decimal(str(price)))
+            sym_ns = f"{clean}.NS"
+            target = sym_ns if sym_ns in self.positions else (clean if clean in self.positions else None)
+            if target:
+                self.positions[target].update_price(Decimal(str(price)))
 
     def get_portfolio_summary(self) -> Dict[str, Any]:
         """Returns structured portfolio valuation and P&L metrics."""

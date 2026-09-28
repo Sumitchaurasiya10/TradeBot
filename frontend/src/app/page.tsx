@@ -10,6 +10,7 @@ import { StrategyView } from "../components/StrategyView";
 import { BacktestView } from "../components/BacktestView";
 import { PaperTradingView } from "../components/PaperTradingView";
 import { TradesView } from "../components/TradesView";
+import { OrderModal } from "../components/OrderModal";
 import { api } from "../services/api";
 import { useMarketWebSocket } from "../hooks/useMarketWebSocket";
 import { BotStatus, PortfolioSummary, Stock } from "../types";
@@ -22,6 +23,17 @@ export default function Home() {
   const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Brokerage-style order ticket modal state
+  const [tradeModalOpen, setTradeModalOpen] = useState<boolean>(false);
+  const [tradeModalSymbol, setTradeModalSymbol] = useState<string>("TCS.NS");
+  const [tradeModalSide, setTradeModalSide] = useState<"BUY" | "SELL">("BUY");
+
+  const handleOpenTradeModal = (symbol: string, side: "BUY" | "SELL" = "BUY") => {
+    setTradeModalSymbol(symbol);
+    setTradeModalSide(side);
+    setTradeModalOpen(true);
+  };
 
   // Core 8 symbols for real-time WebSocket subscriptions
   const defaultWatchlist = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "ITC", "LT"];
@@ -115,6 +127,7 @@ export default function Home() {
             indices={indices}
             quotes={quotes}
             setActiveTab={setActiveTab}
+            onOpenTradeModal={handleOpenTradeModal}
           />
         )}
 
@@ -135,11 +148,26 @@ export default function Home() {
             stocks={stocks}
             portfolio={portfolio}
             onRefreshPortfolio={refreshPortfolio}
+            onOpenTradeModal={handleOpenTradeModal}
           />
         )}
 
         {activeTab === "trades" && <TradesView stocks={stocks} />}
       </main>
+
+      {/* Global Brokerage-Style Order Ticket Modal */}
+      <OrderModal
+        isOpen={tradeModalOpen}
+        onClose={() => setTradeModalOpen(false)}
+        initialSymbol={tradeModalSymbol}
+        initialSide={tradeModalSide}
+        stocks={stocks}
+        portfolio={portfolio}
+        quotes={quotes}
+        onOrderSuccess={() => {
+          refreshPortfolio();
+        }}
+      />
 
       {/* Footer / Educational Disclaimer Banner */}
       <footer className="border-t border-slate-900 bg-slate-950 py-6 mt-12 text-xs text-slate-500">

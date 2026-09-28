@@ -39,10 +39,14 @@ async def create_paper_order(
     Enforces risk rules (max allocation, max positions, cash sufficiency, no overselling).
     If price is <= 0, automatically uses the current live market LTP.
     """
-    price_dec = Decimal(str(request.price))
-    if price_dec <= Decimal("0.0"):
-        live_q = await provider.get_quote(request.symbol)
+    clean = request.symbol.upper().replace(".NS", "").replace(".BO", "").strip()
+    is_market = getattr(request, "order_type", "MARKET") == "MARKET" or (request.price is None or request.price <= 0.0)
+
+    if is_market:
+        live_q = await provider.get_quote(clean)
         price_dec = live_q.last_price
+    else:
+        price_dec = Decimal(str(request.price))
     sl_dec = Decimal(str(request.stop_loss_pct)) if request.stop_loss_pct is not None else None
     tp_dec = Decimal(str(request.take_profit_pct)) if request.take_profit_pct is not None else None
 
