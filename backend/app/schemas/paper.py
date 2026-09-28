@@ -1,4 +1,4 @@
-﻿from decimal import Decimal
+from decimal import Decimal
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
@@ -7,7 +7,7 @@ class OrderCreateRequest(BaseModel):
     symbol: str
     side: str  # "BUY" or "SELL"
     quantity: int = Field(gt=0)
-    price: float = Field(gt=0.0)
+    price: Optional[float] = Field(default=0.0, ge=0.0, description="Order price, or 0.0 to auto-fill at current market LTP")
     stop_loss_pct: Optional[float] = Field(default=None, ge=0.005, le=0.20)
     take_profit_pct: Optional[float] = Field(default=None, ge=0.01, le=0.50)
 

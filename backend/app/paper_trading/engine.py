@@ -118,9 +118,12 @@ class PaperTradingEngine:
         order_id = self._order_counter
         timestamp_now = datetime.now(timezone.utc).isoformat()
         side_upper = side.upper()
+        clean_symbol = symbol.upper().strip()
+        supported_bases = {s.upper().replace(".NS", "").replace(".BO", "").strip() for s in settings.SUPPORTED_SYMBOLS}
+        base_symbol = clean_symbol.replace(".NS", "").replace(".BO", "")
 
         # 1. Basic validation
-        if symbol not in settings.SUPPORTED_SYMBOLS:
+        if clean_symbol not in settings.SUPPORTED_SYMBOLS and base_symbol not in supported_bases:
             order = PaperOrder(
                 order_id=order_id,
                 symbol=symbol,
@@ -133,6 +136,9 @@ class PaperTradingEngine:
             )
             self.orders.append(order)
             return order
+
+        # Normalize symbol for consistent internal accounting
+        symbol = f"{base_symbol}.NS"
 
         if quantity <= 0:
             order = PaperOrder(
@@ -368,6 +374,13 @@ class PaperTradingEngine:
             )
             self.orders.append(order)
             return order
+
+    def update_market_prices(self, prices: Dict[str, Decimal]) -> None:
+        """Updates the current market price and unrealized P&L for all open positions."""
+        for symbol, price in prices.items():
+            clean = symbol.upper().replace(".NS", "").replace(".BO", "").strip()
+            if clean in self.positions:
+                self.positions[clean].update_price(Decimal(str(price)))
 
     def get_portfolio_summary(self) -> Dict[str, Any]:
         """Returns structured portfolio valuation and P&L metrics."""

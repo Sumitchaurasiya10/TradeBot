@@ -1,4 +1,4 @@
-﻿from decimal import Decimal
+from decimal import Decimal
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -20,6 +20,7 @@ from backend.app.schemas.paper import (
     PositionResponse,
     TradeResponse,
 )
+from backend.app.services.market_data import get_market_data_provider
 
 router = APIRouter()
 
@@ -28,12 +29,20 @@ paper_engine = PaperTradingEngine()
 
 
 @router.post("/orders", response_model=OrderResponse)
-async def create_paper_order(request: OrderCreateRequest, db: AsyncSession = Depends(get_db)):
+async def create_paper_order(
+    request: OrderCreateRequest,
+    db: AsyncSession = Depends(get_db),
+    provider=Depends(get_market_data_provider),
+):
     """
     Submits a simulated paper market order.
     Enforces risk rules (max allocation, max positions, cash sufficiency, no overselling).
+    If price is <= 0, automatically uses the current live market LTP.
     """
     price_dec = Decimal(str(request.price))
+    if price_dec <= Decimal("0.0"):
+        live_q = await provider.get_quote(request.symbol)
+        price_dec = live_q.last_price
     sl_dec = Decimal(str(request.stop_loss_pct)) if request.stop_loss_pct is not None else None
     tp_dec = Decimal(str(request.take_profit_pct)) if request.take_profit_pct is not None else None
 
@@ -85,8 +94,17 @@ async def create_paper_order(request: OrderCreateRequest, db: AsyncSession = Dep
 
 
 @router.get("/portfolio", response_model=PortfolioSummaryResponse)
-async def get_portfolio():
-    """Returns current simulated portfolio valuation, cash balance, and P&L."""
+async def get_portfolio(provider=Depends(get_market_data_provider)):
+    """Returns current simulated portfolio valuation, cash balance, and P&L updated with live prices."""
+    if paper_engine.positions:
+        try:
+            pos_syms = list(paper_engine.positions.keys())
+            quotes = await provider.get_quotes(pos_syms)
+            prices = {q.symbol: q.last_price for q in quotes}
+            paper_engine.update_market_prices(prices)
+        except Exception:
+            pass
+
     summary = paper_engine.get_portfolio_summary()
     positions = [
         PositionResponse(
@@ -118,8 +136,17 @@ async def get_portfolio():
 
 
 @router.get("/positions", response_model=List[PositionResponse])
-async def get_positions():
-    """Lists all currently active open positions in the paper portfolio."""
+async def get_positions(provider=Depends(get_market_data_provider)):
+    """Lists all currently active open positions in the paper portfolio updated with live prices."""
+    if paper_engine.positions:
+        try:
+            pos_syms = list(paper_engine.positions.keys())
+            quotes = await provider.get_quotes(pos_syms)
+            prices = {q.symbol: q.last_price for q in quotes}
+            paper_engine.update_market_prices(prices)
+        except Exception:
+            pass
+
     summary = paper_engine.get_portfolio_summary()
     return [
         PositionResponse(
