@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import List, Union
+from typing import List, Optional, Union
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -41,6 +41,26 @@ class Settings(BaseSettings):
         'INFY.NS',
         'HDFCBANK.NS',
         'ICICIBANK.NS',
+        'SBIN.NS',
+        'ITC.NS',
+        'LT.NS',
+    ]
+
+    # Major Benchmark Indices
+    SUPPORTED_INDICES: List[str] = [
+        'NIFTY 50',
+        'SENSEX',
+        'BANK NIFTY',
+    ]
+
+    # Supported F&O Underlyings
+    SUPPORTED_FNO_UNDERLYINGS: List[str] = [
+        'NIFTY',
+        'BANK NIFTY',
+        'RELIANCE',
+        'TCS',
+        'INFY',
+        'HDFCBANK',
     ]
 
     # Market Timezone and Hours
@@ -55,8 +75,19 @@ class Settings(BaseSettings):
     MAX_CAPITAL_PER_TRADE_PCT: Decimal = Decimal('0.20')
     MAX_OPEN_POSITIONS: int = 5
 
-    # Market Data Provider
+    # Market Data Provider: 'hybrid', 'mock', 'yfinance', 'angel_one', 'kite'
+    LIVE_DATA_PROVIDER: str = 'hybrid'
     MARKET_DATA_PROVIDER: str = 'yfinance'
+
+    # Optional Broker Credentials (Never commit real values)
+    ANGEL_ONE_API_KEY: Optional[str] = None
+    ANGEL_ONE_CLIENT_CODE: Optional[str] = None
+    ANGEL_ONE_PIN: Optional[str] = None
+    ANGEL_ONE_TOTP_SECRET: Optional[str] = None
+
+    KITE_API_KEY: Optional[str] = None
+    KITE_API_SECRET: Optional[str] = None
+    KITE_ACCESS_TOKEN: Optional[str] = None
 
 
 settings = Settings()

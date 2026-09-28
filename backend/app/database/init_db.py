@@ -1,4 +1,4 @@
-﻿from decimal import Decimal
+from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.core.config import settings
@@ -25,6 +25,9 @@ async def init_db() -> None:
             ("INFY.NS", "Infosys Limited", "Information Technology"),
             ("HDFCBANK.NS", "HDFC Bank Limited", "Banking & Financials"),
             ("ICICIBANK.NS", "ICICI Bank Limited", "Banking & Financials"),
+            ("SBIN.NS", "State Bank of India", "Banking & Financials"),
+            ("ITC.NS", "ITC Limited", "FMCG"),
+            ("LT.NS", "Larsen & Toubro Limited", "Engineering & Infrastructure"),
         ]
 
         for symbol, name, sector in default_stocks:
